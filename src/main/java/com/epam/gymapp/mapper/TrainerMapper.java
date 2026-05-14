@@ -22,6 +22,7 @@ public class TrainerMapper {
         dto.setSpecialization(trainer.getSpecialization());
         dto.setFirstName(trainer.getFirstName());
         dto.setLastName(trainer.getLastName());
+        dto.setUsername(trainer.getUsername());
 
         return dto;
     }

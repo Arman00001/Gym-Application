@@ -4,5 +4,5 @@ import com.epam.gymapp.persistence.entity.Training;
 
 public interface TrainingRepository {
     Training save(Training training);
-    Training get(String trainerUsername);
+    Training get(Long id);
 }

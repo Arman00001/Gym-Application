@@ -14,6 +14,7 @@ public class TrainingMapper {
         training.setDuration(dto.getDuration());
         training.setTrainerUsername(dto.getTrainerUsername());
         training.setTraineeUsername(dto.getTraineeUsername());
+        training.setType(dto.getType());
         training.setName(dto.getName());
 
         return training;
@@ -27,6 +28,8 @@ public class TrainingMapper {
         dto.setTrainerUsername(training.getTrainerUsername());
         dto.setTraineeUsername(training.getTraineeUsername());
         dto.setName(training.getName());
+        dto.setType(training.getType());
+        dto.setId(training.getId());
 
         return dto;
     }

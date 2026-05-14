@@ -10,17 +10,28 @@ repositories {
 }
 
 dependencies {
-    implementation("org.slf4j:slf4j-api:2.0.17")
-    implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
-    implementation("org.projectlombok:lombok:1.18.46")
     implementation("org.springframework:spring-context:7.0.7")
+    implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
-    testImplementation("org.mockito:mockito-core:5.14.2")
-    testImplementation("org.springframework:spring-test:6.1.14")
+    implementation("org.slf4j:slf4j-api:2.0.17")
+    runtimeOnly("org.slf4j:slf4j-simple:2.0.17")
 
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
+    compileOnly("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok:1.18.46")
+
+    testCompileOnly("org.projectlombok:lombok:1.18.46")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.46")
+
+    testImplementation(platform("org.junit:junit-bom:5.11.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+
+    testImplementation("org.mockito:mockito-core:5.23.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.23.0")
+
+    testImplementation("org.springframework:spring-test:7.0.7")
+
+    testImplementation("org.assertj:assertj-core:3.26.3")
+
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

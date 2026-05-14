@@ -14,6 +14,6 @@ import java.util.Map;
 public class Storage {
     private final Map<String, Trainee> trainees = new HashMap<>();
     private final Map<String, Trainer> trainers = new HashMap<>();
-    private final Map<String, Training> trainings = new HashMap<>();
+    private final Map<Long, Training> trainings = new HashMap<>();
 
 }

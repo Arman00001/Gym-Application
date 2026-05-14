@@ -6,5 +6,5 @@ import com.epam.gymapp.dto.training.TrainingDto;
 
 public interface TrainingService {
     TrainingDto createTraining(TrainingCreateDto trainingCreateDto);
-    TrainingDto getTraining(String trainerUsername);
+    TrainingDto getTraining(Long id);
 }

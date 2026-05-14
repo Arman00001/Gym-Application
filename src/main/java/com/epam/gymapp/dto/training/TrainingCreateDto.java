@@ -1,5 +1,6 @@
 package com.epam.gymapp.dto.training;
 
+import com.epam.gymapp.persistence.entity.TrainingType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,6 +14,6 @@ public class TrainingCreateDto {
     private String trainerUsername;
     private String name;
     private OffsetDateTime date;
-    private String type;
+    private TrainingType type;
     private Duration duration;
 }
