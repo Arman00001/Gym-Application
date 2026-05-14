@@ -1,12 +1,12 @@
 package com.epam.gymapp.persistence.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@AllArgsConstructor
 @Getter
 @Setter
+@NoArgsConstructor
 public class TrainingType {
     private String name;
 }

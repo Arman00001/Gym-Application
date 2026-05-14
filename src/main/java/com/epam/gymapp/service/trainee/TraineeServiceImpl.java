@@ -9,19 +9,34 @@ import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.util.PasswordGenerator;
 import com.epam.gymapp.util.UsernameGenerator;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class TraineeServiceImpl implements TraineeService {
     private static final Logger log = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
-    private final TraineeRepository traineeRepository;
-    private final UsernameGenerator usernameGenerator;
-    private final PasswordGenerator passwordGenerator;
+    private TraineeRepository traineeRepository;
+    private UsernameGenerator usernameGenerator;
+    private PasswordGenerator passwordGenerator;
+
+    @Autowired
+    public void setTraineeRepository(TraineeRepository traineeRepository) {
+        this.traineeRepository = traineeRepository;
+    }
+
+    @Autowired
+
+    public void setUsernameGenerator(UsernameGenerator usernameGenerator) {
+        this.usernameGenerator = usernameGenerator;
+    }
+
+    @Autowired
+    public void setPasswordGenerator(PasswordGenerator passwordGenerator) {
+        this.passwordGenerator = passwordGenerator;
+    }
 
     @Override
     public TraineeCreateResponse createTrainee(TraineeCreateDto traineeCreateDto) {
@@ -30,7 +45,7 @@ public class TraineeServiceImpl implements TraineeService {
                 traineeCreateDto.getLastName());
 
         Trainee trainee = TraineeMapper.mapCreateToTrainee(traineeCreateDto);
-        String username = usernameGenerator.generate(trainee.getFirstName(),trainee.getLastName());
+        String username = usernameGenerator.generate(trainee.getFirstName(), trainee.getLastName());
         String password = passwordGenerator.generate();
         trainee.setUsername(username);
         trainee.setPassword(password);
@@ -45,20 +60,22 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     public TraineeDto updateTrainee(TraineeUpdateDto dto) {
         log.info("Updating trainee profile. username={}", dto.getUsername());
-        Trainee prev = traineeRepository.get(dto.getUsername());
 
-        if (prev == null) {
+        Trainee existing = traineeRepository.get(dto.getUsername());
+
+        if (existing == null) {
             log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
             throw new IllegalArgumentException("Trainee does not exist");
         }
 
-        Trainee trainee = TraineeMapper.mapUpdateToTrainee(dto);
+        existing.setFirstName(dto.getFirstName());
+        existing.setLastName(dto.getLastName());
+        existing.setIsActive(dto.getIsActive());
+        existing.setDateOfBirth(dto.getDateOfBirth());
+        existing.setAddress(dto.getAddress());
 
-        trainee.setId(prev.getId());
-        trainee.setUserId(prev.getUserId());
-        trainee.setPassword(prev.getPassword());
+        Trainee updated = traineeRepository.update(existing);
 
-        Trainee updated = traineeRepository.update(trainee);
         log.info("Trainee profile updated successfully. username={}", updated.getUsername());
 
         return TraineeMapper.mapToDto(updated);

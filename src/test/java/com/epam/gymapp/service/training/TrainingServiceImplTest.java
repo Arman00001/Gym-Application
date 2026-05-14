@@ -2,7 +2,11 @@ package com.epam.gymapp.service.training;
 
 import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
+import com.epam.gymapp.persistence.entity.Trainee;
+import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
+import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
+import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +28,12 @@ class TrainingServiceImplTest {
     @Mock
     private TrainingRepository trainingRepository;
 
+    @Mock
+    private TraineeRepository traineeRepository;
+
+    @Mock
+    private TrainerRepository trainerRepository;
+
     @InjectMocks
     private TrainingServiceImpl trainingService;
 
@@ -35,6 +45,15 @@ class TrainingServiceImplTest {
         dto.setName("Morning Yoga");
         dto.setDate(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
         dto.setDuration(Duration.ofHours(1));
+
+        Trainee trainee = new Trainee();
+        trainee.setUsername("John.Smith");
+
+        Trainer trainer = new Trainer();
+        trainer.setUsername("Alex.Brown");
+
+        when(traineeRepository.get("John.Smith")).thenReturn(trainee);
+        when(trainerRepository.get("Alex.Brown")).thenReturn(trainer);
 
         when(trainingRepository.save(any(Training.class))).thenAnswer(invocation -> {
             Training training = invocation.getArgument(0);
@@ -49,6 +68,10 @@ class TrainingServiceImplTest {
         assertThat(result.getTrainerUsername()).isEqualTo("Alex.Brown");
         assertThat(result.getName()).isEqualTo("Morning Yoga");
         assertThat(result.getDuration()).isEqualTo(Duration.ofHours(1));
+
+        verify(traineeRepository).get("John.Smith");
+        verify(trainerRepository).get("Alex.Brown");
+        verify(trainingRepository).save(any(Training.class));
     }
 
     @Test

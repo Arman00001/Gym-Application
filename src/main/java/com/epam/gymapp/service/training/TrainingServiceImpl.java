@@ -4,18 +4,34 @@ import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.persistence.entity.Training;
+import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
+import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
-import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class TrainingServiceImpl implements TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
 
-    private final TrainingRepository trainingRepository;
+    private TrainingRepository trainingRepository;
+    private TraineeRepository traineeRepository;
+    private TrainerRepository trainerRepository;
+
+    @Autowired
+    public void setTrainingRepository(TrainingRepository trainingRepository) {
+        this.trainingRepository = trainingRepository;
+    }
+    @Autowired
+    public void setTraineeRepository(TraineeRepository traineeRepository) {
+        this.traineeRepository = traineeRepository;
+    }
+    @Autowired
+    public void setTrainerRepository(TrainerRepository trainerRepository) {
+        this.trainerRepository = trainerRepository;
+    }
 
     @Override
     public TrainingDto createTraining(TrainingCreateDto trainingCreateDto) {
@@ -23,6 +39,13 @@ public class TrainingServiceImpl implements TrainingService {
                 trainingCreateDto.getTraineeUsername(),
                 trainingCreateDto.getTrainerUsername());
 
+        if (traineeRepository.get(trainingCreateDto.getTraineeUsername()) == null) {
+            throw new IllegalArgumentException("Trainee does not exist");
+        }
+
+        if (trainerRepository.get(trainingCreateDto.getTrainerUsername()) == null) {
+            throw new IllegalArgumentException("Trainer does not exist");
+        }
         Training training = trainingRepository.save(TrainingMapper.mapCreateToTraining(trainingCreateDto));
 
         log.info("Training profile created successfully. Trainee username={}, trainer username = {}",
