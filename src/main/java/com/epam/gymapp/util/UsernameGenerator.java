@@ -22,7 +22,7 @@ public class UsernameGenerator {
     Set<String> existingUsernames;
 
     @PostConstruct
-    private void init() {
+    void init() {
         existingUsernames = Stream.concat(
                 traineeRepository.getAll().stream().map(Trainee::getUsername),
                 trainerRepository.getAll().stream().map(Trainer::getUsername)
