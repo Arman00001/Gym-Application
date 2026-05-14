@@ -1,0 +1,19 @@
+# Format:
+# TRAINEE;id;userId;firstName;lastName;username;password;isActive;dateOfBirth;address
+# TRAINER;id;userId;firstName;lastName;username;password;isActive;specialization;trainingType
+# TRAINING;id;traineeId;trainerId;name;trainingType;date;durationMinutes
+
+TRAINEE;1;1;John;Smith;John.Smith;Pass123456;true;2000-01-15T00:00:00Z;New York
+TRAINEE;2;2;Anna;Brown;Anna.Brown;Qwerty1234;true;1998-05-20T00:00:00Z;Boston
+TRAINEE;3;3;John;Smith;John.Smith1;Zxcvb12345;false;1995-09-10T00:00:00Z;Chicago
+TRAINEE;4;4;Maria;Garcia;Maria.Garcia;Mypass7890;true;2001-12-03T00:00:00Z;Seattle
+
+TRAINER;1;5;Alex;Johnson;Alex.Johnson;Train12345;true;Yoga;Yoga
+TRAINER;2;6;Emma;Wilson;Emma.Wilson;Fitpass789;true;Fitness;Fitness
+TRAINER;3;7;David;Miller;David.Miller;Strong5678;true;Strength;Strength
+TRAINER;4;8;Alex;Johnson;Alex.Johnson1;Coach12345;false;Boxing;Boxing
+
+TRAINING;1;1;1;Morning Yoga;Yoga;2026-05-20T09:00:00Z;60
+TRAINING;2;2;2;Full Body Fitness;Fitness;2026-05-21T11:00:00Z;45
+TRAINING;3;1;3;Strength Basics;Strength;2026-05-22T18:30:00Z;90
+TRAINING;4;4;1;Evening Yoga;Yoga;2026-05-23T19:00:00Z;60

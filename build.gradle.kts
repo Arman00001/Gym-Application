@@ -30,7 +30,7 @@ dependencies {
 
     testImplementation("org.springframework:spring-test:7.0.7")
 
-    testImplementation("org.assertj:assertj-core:3.26.3")
+    testImplementation("org.assertj:assertj-core:3.27.7")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
