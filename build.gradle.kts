@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
+    implementation("org.slf4j:slf4j-api:2.0.17")
+    implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
     implementation("org.projectlombok:lombok:1.18.46")
     implementation("org.springframework:spring-context:7.0.7")
 
