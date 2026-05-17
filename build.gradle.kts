@@ -13,11 +13,15 @@ dependencies {
     implementation("org.springframework:spring-context:7.0.7")
     implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
 
+    implementation("org.mapstruct:mapstruct:1.6.3")
+    annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
+
     implementation("org.slf4j:slf4j-api:2.0.17")
     runtimeOnly("org.slf4j:slf4j-simple:2.0.17")
 
-    compileOnly("org.projectlombok:lombok:1.18.46")
+    implementation("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 
     testCompileOnly("org.projectlombok:lombok:1.18.46")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.46")
