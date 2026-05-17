@@ -1,13 +1,13 @@
 package com.epam.gymapp.service.training;
 
+import com.epam.gymapp.dto.trainee.TraineeDto;
+import com.epam.gymapp.dto.trainer.TrainerDto;
 import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
-import com.epam.gymapp.persistence.entity.Trainee;
-import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
-import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
-import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
+import com.epam.gymapp.service.trainee.TraineeService;
+import com.epam.gymapp.service.trainer.TrainerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,16 +29,16 @@ class TrainingServiceImplTest {
     private TrainingRepository trainingRepository;
 
     @Mock
-    private TraineeRepository traineeRepository;
+    private TraineeService traineeService;
 
     @Mock
-    private TrainerRepository trainerRepository;
+    private TrainerService trainerService;
 
     @InjectMocks
     private TrainingServiceImpl trainingService;
 
     @Test
-    void createTraining_shouldSaveTrainingAndReturnDto() {
+    void createTraining_shouldCheckTraineeAndTrainerThenSaveTraining() {
         TrainingCreateDto dto = new TrainingCreateDto();
         dto.setTraineeUsername("John.Smith");
         dto.setTrainerUsername("Alex.Brown");
@@ -46,14 +46,13 @@ class TrainingServiceImplTest {
         dto.setDate(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
         dto.setDuration(Duration.ofHours(1));
 
-        Trainee trainee = new Trainee();
-        trainee.setUsername("John.Smith");
+        TraineeDto traineeDto = new TraineeDto();
 
-        Trainer trainer = new Trainer();
-        trainer.setUsername("Alex.Brown");
+        TrainerDto trainerDto = new TrainerDto();
+        trainerDto.setUsername("Alex.Brown");
 
-        when(traineeRepository.get("John.Smith")).thenReturn(trainee);
-        when(trainerRepository.get("Alex.Brown")).thenReturn(trainer);
+        when(traineeService.getTraineeByUsername("John.Smith")).thenReturn(traineeDto);
+        when(trainerService.getTrainerByUsername("Alex.Brown")).thenReturn(trainerDto);
 
         when(trainingRepository.save(any(Training.class))).thenAnswer(invocation -> {
             Training training = invocation.getArgument(0);
@@ -64,23 +63,63 @@ class TrainingServiceImplTest {
         TrainingDto result = trainingService.createTraining(dto);
 
         assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getTraineeUsername()).isEqualTo("John.Smith");
-        assertThat(result.getTrainerUsername()).isEqualTo("Alex.Brown");
         assertThat(result.getName()).isEqualTo("Morning Yoga");
+        assertThat(result.getDate()).isEqualTo(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
         assertThat(result.getDuration()).isEqualTo(Duration.ofHours(1));
 
-        verify(traineeRepository).get("John.Smith");
-        verify(trainerRepository).get("Alex.Brown");
-        verify(trainingRepository).save(any(Training.class));
+        verify(traineeService).getTraineeByUsername("John.Smith");
+        verify(trainerService).getTrainerByUsername("Alex.Brown");
+
+        verify(trainingRepository).save(argThat(training ->
+                training.getName().equals("Morning Yoga")
+                        && training.getDate().equals(OffsetDateTime.parse("2025-01-01T10:00:00Z"))
+                        && training.getDuration().equals(Duration.ofHours(1))
+        ));
+    }
+
+    @Test
+    void createTraining_shouldThrowException_whenTraineeProfileDoesNotExist() {
+        TrainingCreateDto dto = new TrainingCreateDto();
+        dto.setTraineeUsername("John.Smith");
+        dto.setTrainerUsername("Alex.Brown");
+
+        when(traineeService.getTraineeByUsername("John.Smith")).thenReturn(null);
+
+        assertThatThrownBy(() -> trainingService.createTraining(dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Trainee does not exist");
+
+        verify(traineeService).getTraineeByUsername("John.Smith");
+        verify(trainerService, never()).getTrainerByUsername(any());
+        verify(trainingRepository, never()).save(any());
+    }
+
+    @Test
+    void createTraining_shouldThrowException_whenTrainerProfileDoesNotExist() {
+        TrainingCreateDto dto = new TrainingCreateDto();
+        dto.setTraineeUsername("John.Smith");
+        dto.setTrainerUsername("Alex.Brown");
+
+        TraineeDto traineeDto = new TraineeDto();
+
+        when(traineeService.getTraineeByUsername("John.Smith")).thenReturn(traineeDto);
+        when(trainerService.getTrainerByUsername("Alex.Brown")).thenReturn(null);
+
+        assertThatThrownBy(() -> trainingService.createTraining(dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Trainer does not exist");
+
+        verify(traineeService).getTraineeByUsername("John.Smith");
+        verify(trainerService).getTrainerByUsername("Alex.Brown");
+        verify(trainingRepository, never()).save(any());
     }
 
     @Test
     void getTraining_shouldReturnDto_whenTrainingExists() {
         Training training = new Training();
         training.setId(1L);
-        training.setTrainerUsername("Alex.Brown");
-        training.setTraineeUsername("John.Smith");
         training.setName("Morning Yoga");
+        training.setDate(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
         training.setDuration(Duration.ofHours(1));
 
         when(trainingRepository.get(1L)).thenReturn(training);
@@ -88,9 +127,11 @@ class TrainingServiceImplTest {
         TrainingDto result = trainingService.getTraining(1L);
 
         assertThat(result.getId()).isEqualTo(1L);
-        assertThat(result.getTrainerUsername()).isEqualTo("Alex.Brown");
-        assertThat(result.getTraineeUsername()).isEqualTo("John.Smith");
         assertThat(result.getName()).isEqualTo("Morning Yoga");
+        assertThat(result.getDate()).isEqualTo(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
+        assertThat(result.getDuration()).isEqualTo(Duration.ofHours(1));
+
+        verify(trainingRepository).get(1L);
     }
 
     @Test
@@ -100,5 +141,7 @@ class TrainingServiceImplTest {
         assertThatThrownBy(() -> trainingService.getTraining(4L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Training does not exist");
+
+        verify(trainingRepository).get(4L);
     }
 }

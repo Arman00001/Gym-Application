@@ -1,10 +1,13 @@
 package com.epam.gymapp.persistence.repository;
 
-import com.epam.gymapp.persistence.Storage;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepositoryImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,45 +18,65 @@ class TraineeRepositoryImplTest {
 
     @BeforeEach
     void setUp() {
-        Storage storage = new Storage();
+        Map<Long, Trainee> storage = new HashMap<>();
+
         traineeRepository = new TraineeRepositoryImpl();
         traineeRepository.setStorage(storage);
     }
 
     @Test
-    void save_shouldAssignIdUserIdAndActiveStatus() {
+    void save_shouldAssignIdAndStoreTraineeById() {
         Trainee trainee = new Trainee();
-        trainee.setUsername("John.Smith");
-        trainee.setFirstName("John");
-        trainee.setLastName("Smith");
+        trainee.setUserId(10L);
+        trainee.setDateOfBirth(OffsetDateTime.parse("2000-01-01T00:00:00Z"));
+        trainee.setAddress("New York");
 
         Trainee saved = traineeRepository.save(trainee);
 
         assertThat(saved.getId()).isEqualTo(1L);
-        assertThat(saved.getUserId()).isEqualTo(1L);
-        assertThat(saved.getIsActive()).isTrue();
-        assertThat(traineeRepository.get("John.Smith")).isSameAs(saved);
+        assertThat(saved.getUserId()).isEqualTo(10L);
+        assertThat(traineeRepository.get(1L)).isSameAs(saved);
+    }
+
+    @Test
+    void getByUserId_shouldReturnTrainee_whenExists() {
+        Trainee trainee = new Trainee();
+        trainee.setUserId(10L);
+
+        traineeRepository.save(trainee);
+
+        Trainee result = traineeRepository.getByUserId(10L);
+
+        assertThat(result).isSameAs(trainee);
+    }
+
+    @Test
+    void getByUserId_shouldReturnNull_whenDoesNotExist() {
+        Trainee result = traineeRepository.getByUserId(999L);
+
+        assertThat(result).isNull();
     }
 
     @Test
     void update_shouldReplaceExistingTrainee() {
         Trainee trainee = new Trainee();
-        trainee.setUsername("John.Smith");
-        trainee.setFirstName("John");
-        traineeRepository.save(trainee);
+        trainee.setUserId(10L);
+        trainee.setAddress("Old address");
 
-        trainee.setFirstName("Johnny");
+        Trainee saved = traineeRepository.save(trainee);
+        saved.setAddress("New address");
 
-        Trainee updated = traineeRepository.update(trainee);
+        Trainee updated = traineeRepository.update(saved);
 
-        assertThat(updated.getFirstName()).isEqualTo("Johnny");
-        assertThat(traineeRepository.get("John.Smith").getFirstName()).isEqualTo("Johnny");
+        assertThat(updated.getAddress()).isEqualTo("New address");
+        assertThat(traineeRepository.get(saved.getId()).getAddress()).isEqualTo("New address");
     }
 
     @Test
     void update_shouldThrowException_whenTraineeDoesNotExist() {
         Trainee trainee = new Trainee();
-        trainee.setUsername("missing");
+        trainee.setId(999L);
+        trainee.setUserId(10L);
 
         assertThatThrownBy(() -> traineeRepository.update(trainee))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -61,19 +84,20 @@ class TraineeRepositoryImplTest {
     }
 
     @Test
-    void delete_shouldRemoveTrainee() {
+    void delete_shouldRemoveTraineeById() {
         Trainee trainee = new Trainee();
-        trainee.setUsername("John.Smith");
-        traineeRepository.save(trainee);
+        trainee.setUserId(10L);
 
-        traineeRepository.delete("John.Smith");
+        Trainee saved = traineeRepository.save(trainee);
 
-        assertThat(traineeRepository.get("John.Smith")).isNull();
+        traineeRepository.delete(saved.getId());
+
+        assertThat(traineeRepository.get(saved.getId())).isNull();
     }
 
     @Test
     void delete_shouldThrowException_whenTraineeDoesNotExist() {
-        assertThatThrownBy(() -> traineeRepository.delete("missing"))
+        assertThatThrownBy(() -> traineeRepository.delete(999L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Trainee does not exist");
     }
@@ -81,10 +105,10 @@ class TraineeRepositoryImplTest {
     @Test
     void getAll_shouldReturnAllTrainees() {
         Trainee first = new Trainee();
-        first.setUsername("John.Smith");
+        first.setUserId(10L);
 
         Trainee second = new Trainee();
-        second.setUsername("Jane.Smith");
+        second.setUserId(20L);
 
         traineeRepository.save(first);
         traineeRepository.save(second);
