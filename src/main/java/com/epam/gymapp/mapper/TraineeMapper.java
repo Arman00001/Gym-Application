@@ -5,46 +5,19 @@ import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
 import com.epam.gymapp.dto.trainee.TraineeDto;
 import com.epam.gymapp.dto.trainee.TraineeUpdateDto;
 import com.epam.gymapp.persistence.entity.Trainee;
+import com.epam.gymapp.persistence.entity.User;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
 
-public class TraineeMapper {
-    public static Trainee mapCreateToTrainee(TraineeCreateDto dto) {
-        Trainee trainee = new Trainee();
-        trainee.setFirstName(dto.getFirstName());
-        trainee.setLastName(dto.getLastName());
-        trainee.setAddress(dto.getAddress());
-        trainee.setDateOfBirth(dto.getDateOfBirth());
+@Mapper
+public interface TraineeMapper {
+    TraineeMapper INSTANCE = Mappers.getMapper(TraineeMapper.class);
 
-        return trainee;
-    }
+    Trainee mapCreateToTrainee(TraineeCreateDto traineeCreateDto);
 
-    public static TraineeDto mapToDto(Trainee trainee) {
-        TraineeDto dto = new TraineeDto();
-        dto.setAddress(trainee.getAddress());
-        dto.setIsActive(trainee.getIsActive());
-        dto.setDateOfBirth(trainee.getDateOfBirth());
-        dto.setFirstName(trainee.getFirstName());
-        dto.setLastName(trainee.getLastName());
+    TraineeDto mapToDto(Trainee trainee, User user);
 
-        return dto;
-    }
+    Trainee mapUpdateToTrainee(TraineeUpdateDto traineeUpdateDto);
 
-    public static Trainee mapUpdateToTrainee(TraineeUpdateDto dto) {
-        Trainee trainee = new Trainee();
-        trainee.setUsername(dto.getUsername());
-        trainee.setIsActive(dto.getIsActive());
-        trainee.setFirstName(dto.getFirstName());
-        trainee.setLastName(dto.getLastName());
-        trainee.setAddress(dto.getAddress());
-        trainee.setDateOfBirth(dto.getDateOfBirth());
-
-        return trainee;
-    }
-
-    public static TraineeCreateResponse mapToCreatedDto(Trainee traineeResult) {
-        TraineeCreateResponse response = new TraineeCreateResponse();
-        response.setUsername(traineeResult.getUsername());
-        response.setPassword(traineeResult.getPassword());
-
-        return response;
-    }
+    TraineeCreateResponse mapToCreatedDto(Trainee traineeResult);
 }

@@ -8,6 +8,8 @@ import com.epam.gymapp.dto.trainee.TraineeUpdateDto;
 public interface TraineeService {
     TraineeCreateResponse createTrainee(TraineeCreateDto traineeCreateDto);
     TraineeDto updateTrainee(TraineeUpdateDto traineeCreateDto);
-    void deleteTrainee(String username);
-    TraineeDto getTrainee(String username);
+    void deleteTrainee(Long id);
+    void deleteTraineeByUsername(String username);
+    TraineeDto getTraineeById(Long id);
+    TraineeDto getTraineeByUsername(String username);
 }

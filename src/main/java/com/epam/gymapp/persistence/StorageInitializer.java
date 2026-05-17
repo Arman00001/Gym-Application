@@ -4,9 +4,11 @@ import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
 import com.epam.gymapp.persistence.entity.TrainingType;
+import com.epam.gymapp.persistence.entity.User;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
@@ -23,13 +25,24 @@ public class StorageInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(StorageInitializer.class);
 
-    private final Storage storage;
+    private final Map<Long, User> users;
+    private final Map<Long, Trainee> trainees;
+    private final Map<Long, Trainer> trainers;
+    private final Map<Long, Training> trainings;
 
     @Value("${storage.init.file}")
     private String initFilePath;
 
-    public StorageInitializer(Storage storage) {
-        this.storage = storage;
+    public StorageInitializer(
+            @Qualifier("userStorage") Map<Long, User> users,
+            @Qualifier("traineeStorage") Map<Long, Trainee> trainees,
+            @Qualifier("trainerStorage") Map<Long, Trainer> trainers,
+            @Qualifier("trainingStorage") Map<Long, Training> trainings
+    ) {
+        this.users = users;
+        this.trainees = trainees;
+        this.trainers = trainers;
+        this.trainings = trainings;
     }
 
     @PostConstruct
@@ -59,10 +72,11 @@ public class StorageInitializer {
             }
 
             log.info(
-                    "Storage initialized successfully. trainees={}, trainers={}, trainings={}",
-                    storage.getTrainees().size(),
-                    storage.getTrainers().size(),
-                    storage.getTrainings().size()
+                    "Storage initialized successfully. users={}, trainees={}, trainers={}, trainings={}",
+                    users.size(),
+                    trainees.size(),
+                    trainers.size(),
+                    trainings.size()
             );
 
         } catch (Exception e) {
@@ -77,6 +91,7 @@ public class StorageInitializer {
         String type = parts[0];
 
         switch (type) {
+            case "USER" -> parseUser(parts);
             case "TRAINEE" -> parseTrainee(parts);
             case "TRAINER" -> parseTrainer(parts);
             case "TRAINING" -> parseTraining(parts);
@@ -84,49 +99,66 @@ public class StorageInitializer {
         }
     }
 
+    private void parseUser(String[] parts) {
+        validateLength(parts, 7, "USER");
+
+        User user = new User();
+
+        user.setId(Long.parseLong(parts[1]));
+        user.setFirstName(parts[2]);
+        user.setLastName(parts[3]);
+        user.setUsername(parts[4]);
+        user.setPassword(parts[5]);
+        user.setIsActive(Boolean.parseBoolean(parts[6]));
+
+        users.put(user.getId(), user);
+
+        log.debug("Initialized user: id={}, username={}", user.getId(), user.getUsername());
+    }
+
     private void parseTrainee(String[] parts) {
-        validateLength(parts, 10, "TRAINEE");
+        validateLength(parts, 5, "TRAINEE");
 
         Trainee trainee = new Trainee();
 
         trainee.setId(Long.parseLong(parts[1]));
         trainee.setUserId(Long.parseLong(parts[2]));
-        trainee.setFirstName(parts[3]);
-        trainee.setLastName(parts[4]);
-        trainee.setUsername(parts[5]);
-        trainee.setPassword(parts[6]);
-        trainee.setIsActive(Boolean.parseBoolean(parts[7]));
-        trainee.setDateOfBirth(OffsetDateTime.parse(parts[8]));
-        trainee.setAddress(parts[9]);
+        trainee.setDateOfBirth(OffsetDateTime.parse(parts[3]));
+        trainee.setAddress(parts[4]);
 
-        Map<String, Trainee> trainees = storage.getTrainees();
-        trainees.put(trainee.getUsername(), trainee);
+        validateUserExists(trainee.getUserId(), "TRAINEE");
 
-        log.debug("Initialized trainee: username={}", trainee.getUsername());
+        trainees.put(trainee.getId(), trainee);
+
+        log.debug(
+                "Initialized trainee: id={}, userId={}",
+                trainee.getId(),
+                trainee.getUserId()
+        );
     }
 
     private void parseTrainer(String[] parts) {
-        validateLength(parts, 10, "TRAINER");
+        validateLength(parts, 5, "TRAINER");
 
         Trainer trainer = new Trainer();
 
         trainer.setId(Long.parseLong(parts[1]));
         trainer.setUserId(Long.parseLong(parts[2]));
-        trainer.setFirstName(parts[3]);
-        trainer.setLastName(parts[4]);
-        trainer.setUsername(parts[5]);
-        trainer.setPassword(parts[6]);
-        trainer.setIsActive(Boolean.parseBoolean(parts[7]));
-        trainer.setSpecialization(parts[8]);
+        trainer.setSpecialization(parts[3]);
 
         TrainingType trainingType = new TrainingType();
-        trainingType.setName(parts[9]);
+        trainingType.setName(parts[4]);
         trainer.setType(trainingType);
 
-        Map<String, Trainer> trainers = storage.getTrainers();
-        trainers.put(trainer.getUsername(), trainer);
+        validateUserExists(trainer.getUserId(), "TRAINER");
 
-        log.debug("Initialized trainer: username={}", trainer.getUsername());
+        trainers.put(trainer.getId(), trainer);
+
+        log.debug(
+                "Initialized trainer: id={}, userId={}",
+                trainer.getId(),
+                trainer.getUserId()
+        );
     }
 
     private void parseTraining(String[] parts) {
@@ -135,8 +167,8 @@ public class StorageInitializer {
         Training training = new Training();
 
         training.setId(Long.parseLong(parts[1]));
-        training.setTraineeUsername(parts[2]);
-        training.setTrainerUsername(parts[3]);
+        training.setTraineeId(Long.parseLong(parts[2]));
+        training.setTrainerId(Long.parseLong(parts[3]));
         training.setName(parts[4]);
 
         TrainingType trainingType = new TrainingType();
@@ -146,10 +178,36 @@ public class StorageInitializer {
         training.setDate(OffsetDateTime.parse(parts[6]));
         training.setDuration(Duration.ofMinutes(Long.parseLong(parts[7])));
 
-        Map<Long, Training> trainings = storage.getTrainings();
+        validateTraineeExists(training.getTraineeId());
+        validateTrainerExists(training.getTrainerId());
+
         trainings.put(training.getId(), training);
 
         log.debug("Initialized training: id={}", training.getId());
+    }
+
+    private void validateUserExists(Long userId, String recordType) {
+        if (!users.containsKey(userId)) {
+            throw new IllegalArgumentException(
+                    recordType + " references non-existing userId=" + userId
+            );
+        }
+    }
+
+    private void validateTraineeExists(Long traineeId) {
+        if (!trainees.containsKey(traineeId)) {
+            throw new IllegalArgumentException(
+                    "TRAINING references non-existing traineeId=" + traineeId
+            );
+        }
+    }
+
+    private void validateTrainerExists(Long trainerId) {
+        if (!trainers.containsKey(trainerId)) {
+            throw new IllegalArgumentException(
+                    "TRAINING references non-existing trainerId=" + trainerId
+            );
+        }
     }
 
     private void validateLength(String[] parts, int expectedLength, String recordType) {

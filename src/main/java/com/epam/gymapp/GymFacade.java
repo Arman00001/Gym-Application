@@ -26,11 +26,11 @@ public class GymFacade {
     }
 
     public void deleteTrainee(String username) {
-        traineeService.deleteTrainee(username);
+        traineeService.deleteTraineeByUsername(username);
     }
 
     public TraineeDto getTrainee(String username) {
-        return traineeService.getTrainee(username);
+        return traineeService.getTraineeByUsername(username);
     }
 
     public TrainerCreateResponse createTrainer(TrainerCreateDto dto) {
@@ -42,7 +42,7 @@ public class GymFacade {
     }
 
     public TrainerDto getTrainer(String username) {
-        return trainerService.getTrainer(username);
+        return trainerService.getTrainerByUsername(username);
     }
 
     public TrainingDto createTraining(TrainingCreateDto dto) {

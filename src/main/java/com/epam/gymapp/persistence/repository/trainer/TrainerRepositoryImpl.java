@@ -1,10 +1,10 @@
 package com.epam.gymapp.persistence.repository.trainer;
 
-import com.epam.gymapp.persistence.Storage;
 import com.epam.gymapp.persistence.entity.Trainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -15,42 +15,48 @@ import java.util.Map;
 public class TrainerRepositoryImpl implements TrainerRepository {
     private static final Logger log = LoggerFactory.getLogger(TrainerRepositoryImpl.class);
 
-    private Map<String, Trainer> storage;
+    private Map<Long, Trainer> storage;
     private Long lastId = 0L;
 
     @Autowired
-    public void setStorage(Storage storage) {
-        this.storage = storage.getTrainers();
+    public void setStorage(@Qualifier("trainerStorage") Map<Long, Trainer> storage) {
+        this.storage = storage;
     }
 
     @Override
     public Trainer save(Trainer trainer) {
         Long newId = ++lastId;
         trainer.setId(newId);
-        trainer.setUserId(newId);
-        trainer.setIsActive(true);
-        storage.put(trainer.getUsername(), trainer);
+        storage.put(newId, trainer);
 
-        log.debug("Saved trainer to storage. username={}, id={}", trainer.getUsername(), trainer.getId());
+        log.debug("Saved trainer to storage. id={}", trainer.getId());
         return trainer;
     }
 
     @Override
     public Trainer update(Trainer trainer) {
-        if(!storage.containsKey(trainer.getUsername())){
-            log.warn("Cannot update trainer. Not found in storage. username={}", trainer.getUsername());
+        if(!storage.containsKey(trainer.getId())){
+            log.warn("Cannot update trainer. Not found in storage. id={}", trainer.getId());
             throw new IllegalArgumentException("Trainer does not exist");
         }
-        storage.put(trainer.getUsername(), trainer);
+        storage.put(trainer.getId(), trainer);
 
-        log.debug("Updated trainer in storage. username={}", trainer.getUsername());
+        log.debug("Updated trainer in storage. id={}", trainer.getId());
         return trainer;
     }
 
     @Override
-    public Trainer get(String username) {
-        log.debug("Getting trainer from storage. username={}", username);
-        return storage.get(username);
+    public Trainer get(Long id) {
+        log.debug("Getting trainer from storage. id={}", id);
+        return storage.get(id);
+    }
+
+    @Override
+    public Trainer getByUserId(Long userId) {
+        return storage.values().stream()
+                .filter(trainer -> trainer.getUserId().equals(userId))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override

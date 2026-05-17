@@ -7,6 +7,7 @@ import java.util.List;
 public interface TrainerRepository {
     Trainer save(Trainer trainer);
     Trainer update(Trainer trainer);
-    Trainer get(String username);
+    Trainer get(Long id);
+    Trainer getByUserId(Long userId);
     List<Trainer> getAll();
 }

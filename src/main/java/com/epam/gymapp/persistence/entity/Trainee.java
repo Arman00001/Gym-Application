@@ -9,9 +9,9 @@ import java.time.OffsetDateTime;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Trainee extends User {
+public class Trainee {
     private Long id;
+    private Long userId;
     private OffsetDateTime dateOfBirth;
     private String address;
-
 }

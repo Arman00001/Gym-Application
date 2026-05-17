@@ -8,5 +8,6 @@ import com.epam.gymapp.dto.trainer.TrainerUpdateDto;
 public interface TrainerService {
     TrainerCreateResponse createTrainer(TrainerCreateDto trainerCreateDto);
     TrainerDto updateTrainer(TrainerUpdateDto trainerDto);
-    TrainerDto getTrainer(String username);
+    TrainerDto getTrainerById(Long id);
+    TrainerDto getTrainerByUsername(String username);
 }

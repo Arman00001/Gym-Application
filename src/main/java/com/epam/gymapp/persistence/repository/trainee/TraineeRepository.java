@@ -7,7 +7,9 @@ import java.util.List;
 public interface TraineeRepository {
     Trainee save(Trainee trainee);
     Trainee update(Trainee trainee);
-    void delete(String username);
-    Trainee get(String username);
+    Trainee delete(Long id);
+    void deleteByUserId(Long userId);
     List<Trainee> getAll();
+    Trainee getByUserId(Long id);
+    Trainee get(Long id);
 }

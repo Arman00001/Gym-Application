@@ -7,6 +7,8 @@ import com.epam.gymapp.persistence.entity.Training;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
+import com.epam.gymapp.service.trainee.TraineeService;
+import com.epam.gymapp.service.trainer.TrainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,43 +19,44 @@ public class TrainingServiceImpl implements TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
 
     private TrainingRepository trainingRepository;
-    private TraineeRepository traineeRepository;
-    private TrainerRepository trainerRepository;
+    private TraineeService traineeService;
+    private TrainerService trainerService;
+
+    @Autowired
+    public void setTraineeService(TraineeService traineeService) {
+        this.traineeService = traineeService;
+    }
+    @Autowired
+    public void setTrainerService(TrainerService trainerService) {
+        this.trainerService = trainerService;
+    }
 
     @Autowired
     public void setTrainingRepository(TrainingRepository trainingRepository) {
         this.trainingRepository = trainingRepository;
     }
-    @Autowired
-    public void setTraineeRepository(TraineeRepository traineeRepository) {
-        this.traineeRepository = traineeRepository;
-    }
-    @Autowired
-    public void setTrainerRepository(TrainerRepository trainerRepository) {
-        this.trainerRepository = trainerRepository;
-    }
 
     @Override
     public TrainingDto createTraining(TrainingCreateDto trainingCreateDto) {
-        log.info("Creating training profile for {} by {}",
+        log.info("Creating training profile for trainee {} by trainer {}",
                 trainingCreateDto.getTraineeUsername(),
                 trainingCreateDto.getTrainerUsername());
 
-        if (traineeRepository.get(trainingCreateDto.getTraineeUsername()) == null) {
+        if (traineeService.getTraineeByUsername(trainingCreateDto.getTraineeUsername()) == null) {
             throw new IllegalArgumentException("Trainee does not exist");
         }
 
-        if (trainerRepository.get(trainingCreateDto.getTrainerUsername()) == null) {
+        if (trainerService.getTrainerByUsername(trainingCreateDto.getTrainerUsername()) == null) {
             throw new IllegalArgumentException("Trainer does not exist");
         }
-        Training training = trainingRepository.save(TrainingMapper.mapCreateToTraining(trainingCreateDto));
+        Training training = trainingRepository.save(TrainingMapper.INSTANCE.mapCreateToTraining(trainingCreateDto));
 
-        log.info("Training profile created successfully. Trainee username={}, trainer username = {}",
-                training.getTraineeUsername(),
-                training.getTrainerUsername()
+        log.info("Training profile created successfully. Trainee id={}, trainer id = {}",
+                training.getTraineeId(),
+                training.getTrainerId()
         );
 
-        return TrainingMapper.mapToDto(training);
+        return TrainingMapper.INSTANCE.mapToDto(training);
     }
 
     @Override
@@ -66,6 +69,6 @@ public class TrainingServiceImpl implements TrainingService {
             throw new IllegalArgumentException("Training does not exist");
         }
 
-        return TrainingMapper.mapToDto(training);
+        return TrainingMapper.INSTANCE.mapToDto(training);
     }
 }

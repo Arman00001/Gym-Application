@@ -12,8 +12,8 @@ import java.time.OffsetDateTime;
 @NoArgsConstructor
 public class Training {
     private Long id;
-    private String trainerUsername;
-    private String traineeUsername;
+    private Long trainerId;
+    private Long traineeId;
     private String name;
     private TrainingType type;
     private OffsetDateTime date;
