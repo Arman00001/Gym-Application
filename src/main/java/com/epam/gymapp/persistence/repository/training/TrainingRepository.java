@@ -2,7 +2,9 @@ package com.epam.gymapp.persistence.repository.training;
 
 import com.epam.gymapp.persistence.entity.Training;
 
+import java.util.Optional;
+
 public interface TrainingRepository {
     Training save(Training training);
-    Training get(Long id);
+    Optional<Training> get(Long id);
 }

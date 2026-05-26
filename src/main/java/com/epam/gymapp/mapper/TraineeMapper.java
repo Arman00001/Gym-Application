@@ -19,5 +19,5 @@ public interface TraineeMapper {
 
     Trainee mapUpdateToTrainee(TraineeUpdateDto traineeUpdateDto);
 
-    TraineeCreateResponse mapToCreatedDto(Trainee traineeResult);
+    TraineeCreateResponse mapToCreateResponse(User user);
 }

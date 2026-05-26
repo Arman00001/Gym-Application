@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.NoSuchElementException;
+
 @Service
 public class UserServiceImpl implements UserService {
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -29,8 +31,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User createUser(UserCreateDto dto){
-        log.info("Creating user profile for {} {}",dto.getFirstName(),dto.getLastName());
+    public User createUser(UserCreateDto dto) {
+        log.info("Creating user profile for {} {}", dto.getFirstName(), dto.getLastName());
         User user = UserMapper.INSTANCE.userCreateToUser(dto);
 
         user.setUsername(generateUsername(user.getFirstName(), user.getLastName()));
@@ -38,30 +40,23 @@ public class UserServiceImpl implements UserService {
         user.setIsActive(true);
 
         User result = userRepository.save(user);
-        log.info("User with username={} created",result.getUsername());
+        log.info("User with username={} created", result.getUsername());
 
         return result;
     }
 
     @Override
     public User getByUsername(String username) {
-        User user = userRepository.getByUsername(username);
-
-        if (user == null) {
-            throw new IllegalArgumentException("User does not exist");
-        }
-
-        return user;
+        return userRepository.getByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
     }
 
     @Override
     public User updateUser(UserUpdateDto dto) {
-        User user = userRepository.getById(dto.getId());
-
-        if (user == null) {
-            log.warn("User not found. username={}",dto.getUsername());
-            throw new IllegalArgumentException("User does not exist");
-        }
+        User user = userRepository.getById(dto.getId()).orElseThrow(() -> {
+            log.warn("User not found. username={}", dto.getUsername());
+            return new IllegalArgumentException("User does not exist");
+        });
 
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
@@ -72,14 +67,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUser(Long id) {
-        log.info("Deleting user profile. id={}", id);
+        log.info("Deleting user profile by id. id={}", id);
         userRepository.delete(id);
         log.info("User profile deleted. id={}", id);
     }
 
     @Override
+    public void deleteUser(User user) {
+        log.info("Deleting user profile. id={}", user.getId());
+        userRepository.deleteUser(user);
+        log.info("User profile deleted. id={}", user.getId());
+    }
+
+    @Override
     public User getById(Long id) {
-        return userRepository.getById(id);
+        return userRepository.getById(id).orElseThrow(() -> new NoSuchElementException("User not found"));
     }
 
     private String generateUsername(String firstName, String lastName) {

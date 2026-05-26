@@ -1,83 +1,178 @@
 package com.epam.gymapp.persistence.repository.trainee;
 
 import com.epam.gymapp.persistence.entity.Trainee;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 @Repository
 public class TraineeRepositoryImpl implements TraineeRepository {
     private static final Logger log = LoggerFactory.getLogger(TraineeRepositoryImpl.class);
-
-    private Map<Long, Trainee> storage;
-    private Long lastId = 0L;
+    private EntityManager entityManager;
 
     @Autowired
-    public void setStorage(@Qualifier("traineeStorage") Map<Long, Trainee> storage) {
-        this.storage = storage;
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 
     @Override
     public Trainee save(Trainee trainee) {
-        Long newId = ++lastId;
-        trainee.setId(newId);
-        storage.put(trainee.getId(), trainee);
+        EntityTransaction transaction = entityManager.getTransaction();
 
-        log.debug("Saved trainee to storage. id={}", trainee.getId());
-        return trainee;
+        try {
+            transaction.begin();
+            entityManager.persist(trainee);
+
+            transaction.commit();
+
+            log.debug("Saved trainee to database. id={}", trainee.getId());
+            return trainee;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
+        }
     }
 
     @Override
     public Trainee update(Trainee trainee) {
-        if(!storage.containsKey(trainee.getId())){
-            log.warn("Cannot update trainee. Not found in storage. id={}", trainee.getId());
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
-        storage.put(trainee.getUserId(), trainee);
+        EntityTransaction transaction = entityManager.getTransaction();
 
-        log.debug("Updated trainee in storage. user id={}", trainee.getUserId());
-        return trainee;
+        try {
+            transaction.begin();
+
+            if (trainee.getId() == null) {
+                throw new IllegalArgumentException("Trainee id must not be null");
+            }
+            if (entityManager.find(Trainee.class, trainee.getId()) == null) {
+                log.warn("Cannot update trainee. Not found in storage. id={}", trainee.getId());
+                throw new IllegalArgumentException("Trainee does not exist");
+            }
+            Trainee updatedTrainee = entityManager.merge(trainee);
+
+            transaction.commit();
+
+            log.debug("Updated trainee in database. id={}", updatedTrainee.getId());
+            return updatedTrainee;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
+        }
     }
 
     @Override
     public Trainee delete(Long id) {
-        Trainee removed = storage.remove(id);
-        if (removed == null) {
-            log.warn("Cannot delete trainee. Not found in storage. id={}", id);
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
+        EntityTransaction transaction = entityManager.getTransaction();
 
-        log.debug("Deleted trainee from storage. id={}", id);
-        return removed;
+        try {
+            transaction.begin();
+
+            Trainee trainee = entityManager.find(Trainee.class, id);
+            if (trainee != null) {
+                entityManager.remove(trainee);
+            } else {
+                log.warn("Cannot delete trainee. Not found in storage. id={}", id);
+                throw new IllegalArgumentException("Trainee does not exist");
+            }
+
+            transaction.commit();
+            log.debug("Deleted trainee from storage. id={}", id);
+            return trainee;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
+        }
     }
 
     @Override
     public void deleteByUserId(Long userId) {
-        storage.values().stream()
-                .filter(t -> t.getUserId().equals(userId))
-                .findFirst().ifPresent(trainee -> storage.remove(trainee.getId()));
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        try {
+            transaction.begin();
+
+            int result = entityManager
+                    .createQuery("DELETE FROM Trainee t WHERE t.user.id = :userId", Trainee.class)
+                    .setParameter("userId", userId)
+                    .executeUpdate();
+            if (result == 0) {
+                log.warn("Trainee not found. userId={}", userId);
+                throw new IllegalArgumentException("Trainee does not exist");
+            }
+            transaction.commit();
+            log.info("Trainee with userId = {} removed", userId);
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    public void deleteByUsername(String username) {
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        try {
+            transaction.begin();
+
+            int result = entityManager
+                    .createQuery("DELETE FROM Trainee t WHERE t.user.username = :username")
+                    .setParameter("username", username)
+                    .executeUpdate();
+            if (result == 0) {
+                log.warn("Trainee not found. username={}", username);
+                throw new IllegalArgumentException("Trainee does not exist");
+            }
+            transaction.commit();
+            log.info("Trainee deleted. username={}", username);
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
+        }
     }
 
     public List<Trainee> getAll() {
-        return new ArrayList<>(storage.values());
+        return entityManager
+                .createQuery("SELECT t FROM Trainee t", Trainee.class)
+                .getResultList();
     }
 
     @Override
-    public Trainee getByUserId(Long userId) {
-        return storage.values().stream()
-                .filter(trainee -> trainee.getUserId().equals(userId))
-                .findFirst()
-                .orElse(null);
+    public Optional<Trainee> getByUserId(Long userId) {
+        return Optional.ofNullable(
+                entityManager
+                        .createQuery("SELECT t FROM Trainee t WHERE t.user.id = :userId", Trainee.class)
+                        .setParameter("userId", userId)
+                        .getSingleResultOrNull()
+        );
     }
 
     @Override
-    public Trainee get(Long id) {
-        return storage.get(id);
+    public Optional<Trainee> get(Long id) {
+        return Optional.ofNullable(entityManager.find(Trainee.class, id));
+    }
+
+    @Override
+    public Optional<Trainee> getByUsername(String username) {
+        return Optional.ofNullable(
+                entityManager
+                        .createQuery("SELECT t FROM Trainee t WHERE t.user.username = :username", Trainee.class)
+                        .setParameter("username", username)
+                        .getSingleResultOrNull());
+
     }
 }

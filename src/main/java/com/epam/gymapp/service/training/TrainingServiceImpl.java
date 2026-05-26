@@ -3,12 +3,12 @@ package com.epam.gymapp.service.training;
 import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.mapper.TrainingMapper;
+import com.epam.gymapp.persistence.entity.Trainee;
+import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
-import com.epam.gymapp.service.trainee.TraineeService;
-import com.epam.gymapp.service.trainer.TrainerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,16 +19,17 @@ public class TrainingServiceImpl implements TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
 
     private TrainingRepository trainingRepository;
-    private TraineeService traineeService;
-    private TrainerService trainerService;
+    private TraineeRepository traineeRepository;
+    private TrainerRepository trainerRepository;
 
     @Autowired
-    public void setTraineeService(TraineeService traineeService) {
-        this.traineeService = traineeService;
+    public void setTraineeRepository(TraineeRepository traineeRepository) {
+        this.traineeRepository = traineeRepository;
     }
+
     @Autowired
-    public void setTrainerService(TrainerService trainerService) {
-        this.trainerService = trainerService;
+    public void setTrainerRepository(TrainerRepository trainerRepository) {
+        this.trainerRepository = trainerRepository;
     }
 
     @Autowired
@@ -41,19 +42,21 @@ public class TrainingServiceImpl implements TrainingService {
         log.info("Creating training profile for trainee {} by trainer {}",
                 trainingCreateDto.getTraineeUsername(),
                 trainingCreateDto.getTrainerUsername());
+        Trainee trainee = traineeRepository.getByUsername(trainingCreateDto.getTraineeUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainee does not exist"));
+        Trainer trainer = trainerRepository.getByUsername(trainingCreateDto.getTrainerUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Trainer does not exist"));
 
-        if (traineeService.getTraineeByUsername(trainingCreateDto.getTraineeUsername()) == null) {
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
 
-        if (trainerService.getTrainerByUsername(trainingCreateDto.getTrainerUsername()) == null) {
-            throw new IllegalArgumentException("Trainer does not exist");
-        }
-        Training training = trainingRepository.save(TrainingMapper.INSTANCE.mapCreateToTraining(trainingCreateDto));
+        Training training = TrainingMapper.INSTANCE.mapCreateToTraining(trainingCreateDto);
+
+        training.setTrainee(trainee);
+        training.setTrainer(trainer);
+        trainingRepository.save(training);
 
         log.info("Training profile created successfully. Trainee id={}, trainer id = {}",
-                training.getTraineeId(),
-                training.getTrainerId()
+                trainee.getId(),
+                trainer.getId()
         );
 
         return TrainingMapper.INSTANCE.mapToDto(training);
@@ -63,11 +66,10 @@ public class TrainingServiceImpl implements TrainingService {
     public TrainingDto getTraining(Long id) {
         log.info("Getting training profile. Training id={}", id);
 
-        Training training = trainingRepository.get(id);
-        if (training == null) {
+        Training training = trainingRepository.get(id).orElseThrow(() -> {
             log.warn("Training profile not found. Training id={}", id);
-            throw new IllegalArgumentException("Training does not exist");
-        }
+            return new IllegalArgumentException("Training does not exist");
+        });
 
         return TrainingMapper.INSTANCE.mapToDto(training);
     }

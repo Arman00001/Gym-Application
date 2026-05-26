@@ -5,7 +5,6 @@ import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
 import com.epam.gymapp.dto.trainee.TraineeDto;
 import com.epam.gymapp.dto.trainee.TraineeUpdateDto;
 import com.epam.gymapp.dto.user.UserCreateDto;
-import com.epam.gymapp.dto.user.UserUpdateDto;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
@@ -18,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,16 +44,8 @@ class TraineeServiceImplTest {
         dto.setAddress("New York");
         dto.setDateOfBirth(OffsetDateTime.parse("2000-01-01T00:00:00Z"));
 
-        User user = new User();
-        user.setId(10L);
-        user.setFirstName("John");
-        user.setLastName("Smith");
-        user.setUsername("John.Smith");
-        user.setPassword("password12");
-        user.setIsActive(true);
-
+        User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
         when(userService.createUser(any(UserCreateDto.class))).thenReturn(user);
-
         when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> {
             Trainee trainee = invocation.getArgument(0);
             trainee.setId(1L);
@@ -67,33 +59,18 @@ class TraineeServiceImplTest {
 
         ArgumentCaptor<Trainee> traineeCaptor = ArgumentCaptor.forClass(Trainee.class);
         verify(traineeRepository).save(traineeCaptor.capture());
-
         Trainee savedTrainee = traineeCaptor.getValue();
-
-        assertThat(savedTrainee.getUserId()).isEqualTo(10L);
+        assertThat(savedTrainee.getUser()).isSameAs(user);
         assertThat(savedTrainee.getDateOfBirth()).isEqualTo(dto.getDateOfBirth());
         assertThat(savedTrainee.getAddress()).isEqualTo("New York");
-
         verify(userService).createUser(any(UserCreateDto.class));
     }
 
     @Test
-    void getTrainee_shouldReturnDto_whenUserAndTraineeExist() {
-        User user = new User();
-        user.setId(10L);
-        user.setUsername("John.Smith");
-        user.setFirstName("John");
-        user.setLastName("Smith");
-        user.setIsActive(true);
-
-        Trainee trainee = new Trainee();
-        trainee.setId(1L);
-        trainee.setUserId(10L);
-        trainee.setAddress("New York");
-        trainee.setDateOfBirth(OffsetDateTime.parse("2000-01-01T00:00:00Z"));
-
-        when(userService.getByUsername("John.Smith")).thenReturn(user);
-        when(traineeRepository.getByUserId(10L)).thenReturn(trainee);
+    void getTraineeByUsername_shouldReturnDto_whenTraineeExists() {
+        User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
+        Trainee trainee = trainee(1L, user, "New York", "2000-01-01T00:00:00Z");
+        when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(trainee));
 
         TraineeDto result = traineeService.getTraineeByUsername("John.Smith");
 
@@ -101,19 +78,13 @@ class TraineeServiceImplTest {
         assertThat(result.getLastName()).isEqualTo("Smith");
         assertThat(result.getAddress()).isEqualTo("New York");
         assertThat(result.getIsActive()).isTrue();
-
-        verify(userService).getByUsername("John.Smith");
-        verify(traineeRepository).getByUserId(10L);
+        verify(traineeRepository).getByUsername("John.Smith");
+        verifyNoInteractions(userService);
     }
 
     @Test
-    void getTrainee_shouldThrowException_whenTraineeProfileDoesNotExist() {
-        User user = new User();
-        user.setId(10L);
-        user.setUsername("John.Smith");
-
-        when(userService.getByUsername("John.Smith")).thenReturn(user);
-        when(traineeRepository.getByUserId(10L)).thenReturn(null);
+    void getTraineeByUsername_shouldThrowException_whenTraineeProfileDoesNotExist() {
+        when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> traineeService.getTraineeByUsername("John.Smith"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -121,7 +92,20 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    void updateTrainee_shouldUpdateUserAndTraineeProfile() {
+    void getTraineeById_shouldReturnDto_whenTraineeExists() {
+        User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
+        Trainee trainee = trainee(1L, user, "New York", "2000-01-01T00:00:00Z");
+        when(traineeRepository.get(1L)).thenReturn(Optional.of(trainee));
+
+        TraineeDto result = traineeService.getTraineeById(1L);
+
+        assertThat(result.getFirstName()).isEqualTo("John");
+        assertThat(result.getAddress()).isEqualTo("New York");
+        verify(traineeRepository).get(1L);
+    }
+
+    @Test
+    void updateTrainee_shouldUpdateUserFieldsAndTraineeProfile() {
         TraineeUpdateDto dto = new TraineeUpdateDto();
         dto.setUsername("John.Smith");
         dto.setFirstName("Johnny");
@@ -130,28 +114,9 @@ class TraineeServiceImplTest {
         dto.setAddress("New address");
         dto.setDateOfBirth(OffsetDateTime.parse("2001-01-01T00:00:00Z"));
 
-        User existingUser = new User();
-        existingUser.setId(10L);
-        existingUser.setUsername("John.Smith");
-        existingUser.setFirstName("John");
-        existingUser.setLastName("Smith");
-        existingUser.setIsActive(true);
-
-        User updatedUser = new User();
-        updatedUser.setId(10L);
-        updatedUser.setUsername("John.Smith");
-        updatedUser.setFirstName("Johnny");
-        updatedUser.setLastName("Smith");
-        updatedUser.setIsActive(false);
-
-        Trainee existingTrainee = new Trainee();
-        existingTrainee.setId(1L);
-        existingTrainee.setUserId(10L);
-        existingTrainee.setAddress("Old address");
-
-        when(userService.getByUsername("John.Smith")).thenReturn(existingUser);
-        when(userService.updateUser(any(UserUpdateDto.class))).thenReturn(updatedUser);
-        when(traineeRepository.getByUserId(10L)).thenReturn(existingTrainee);
+        User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
+        Trainee existing = trainee(1L, user, "Old address", "2000-01-01T00:00:00Z");
+        when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(existing));
         when(traineeRepository.update(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TraineeDto result = traineeService.updateTrainee(dto);
@@ -159,80 +124,56 @@ class TraineeServiceImplTest {
         assertThat(result.getFirstName()).isEqualTo("Johnny");
         assertThat(result.getIsActive()).isFalse();
         assertThat(result.getAddress()).isEqualTo("New address");
-
-        verify(userService).getByUsername("John.Smith");
-        verify(userService).updateUser(any(UserUpdateDto.class));
-
         verify(traineeRepository).update(argThat(trainee ->
                 trainee.getId().equals(1L)
-                        && trainee.getUserId().equals(10L)
+                        && trainee.getUser().getId().equals(10L)
+                        && trainee.getUser().getFirstName().equals("Johnny")
                         && trainee.getAddress().equals("New address")
+                        && trainee.getDateOfBirth().equals(OffsetDateTime.parse("2001-01-01T00:00:00Z"))
         ));
+        verifyNoInteractions(userService);
     }
 
     @Test
     void updateTrainee_shouldThrowException_whenTraineeProfileDoesNotExist() {
         TraineeUpdateDto dto = new TraineeUpdateDto();
         dto.setUsername("John.Smith");
-        dto.setFirstName("John");
-        dto.setLastName("Smith");
-        dto.setIsActive(true);
-        dto.setAddress("New address");
-        dto.setDateOfBirth(OffsetDateTime.parse("2001-01-01T00:00:00Z"));
 
-        User existingUser = new User();
-        existingUser.setId(10L);
-        existingUser.setUsername("John.Smith");
-
-        User updatedUser = new User();
-        updatedUser.setId(10L);
-        updatedUser.setUsername("John.Smith");
-        updatedUser.setFirstName("John");
-        updatedUser.setLastName("Smith");
-        updatedUser.setIsActive(true);
-
-        when(userService.getByUsername("John.Smith")).thenReturn(existingUser);
-        when(userService.updateUser(any(UserUpdateDto.class))).thenReturn(updatedUser);
-        when(traineeRepository.getByUserId(10L)).thenReturn(null);
+        when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> traineeService.updateTrainee(dto))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Trainee does not exist");
 
-        verify(userService).getByUsername("John.Smith");
-        verify(userService).updateUser(any(UserUpdateDto.class));
-        verify(traineeRepository).getByUserId(10L);
         verify(traineeRepository, never()).update(any());
+        verifyNoInteractions(userService);
     }
 
     @Test
-    void deleteTraineeByUsername_shouldDeleteTraineeProfileAndUser() {
-        User user = new User();
-        user.setId(10L);
-        user.setUsername("John.Smith");
-
-        when(userService.getByUsername("John.Smith")).thenReturn(user);
-
+    void deleteTraineeByUsername_shouldDelegateToRepository() {
         traineeService.deleteTraineeByUsername("John.Smith");
 
-        verify(userService).getByUsername("John.Smith");
-        verify(traineeRepository).deleteByUserId(10L);
-        verify(userService).deleteUser(10L);
-
-        verify(traineeRepository, never()).delete(any());
-        verify(traineeRepository, never()).getByUserId(any());
+        verify(traineeRepository).deleteByUsername("John.Smith");
+        verifyNoInteractions(userService);
     }
 
-    @Test
-    void deleteTraineeByUsername_shouldThrowException_whenUserDoesNotExist() {
-        when(userService.getByUsername("missing")).thenReturn(null);
+    private static User user(Long id, String firstName, String lastName, String username, String password, boolean active) {
+        User user = new User();
+        user.setId(id);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setUsername(username);
+        user.setPassword(password);
+        user.setIsActive(active);
+        return user;
+    }
 
-        assertThatThrownBy(() -> traineeService.deleteTraineeByUsername("missing"))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Trainee does not exist");
-
-        verify(userService).getByUsername("missing");
-        verify(traineeRepository, never()).deleteByUserId(any());
-        verify(userService, never()).deleteUser(any());
+    private static Trainee trainee(Long id, User user, String address, String dateOfBirth) {
+        Trainee trainee = new Trainee();
+        trainee.setId(id);
+        trainee.setUser(user);
+        trainee.setAddress(address);
+        trainee.setDateOfBirth(OffsetDateTime.parse(dateOfBirth));
+        return trainee;
     }
 }

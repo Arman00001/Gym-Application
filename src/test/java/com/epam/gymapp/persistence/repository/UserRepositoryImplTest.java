@@ -2,114 +2,147 @@ package com.epam.gymapp.persistence.repository;
 
 import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.user.UserRepositoryImpl;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class UserRepositoryImplTest {
+
+    @Mock
+    private EntityManager entityManager;
+
+    @Mock
+    private EntityTransaction transaction;
+
+    @Mock
+    private TypedQuery<User> userQuery;
 
     private UserRepositoryImpl userRepository;
 
     @BeforeEach
     void setUp() {
-        Map<Long, User> storage = new HashMap<>();
-
         userRepository = new UserRepositoryImpl();
-        userRepository.setStorage(storage);
+        userRepository.setEntityManager(entityManager);
+        lenient().when(entityManager.getTransaction()).thenReturn(transaction);
     }
 
     @Test
-    void save_shouldAssignIdAndStoreUserById() {
-        User user = new User();
-        user.setFirstName("John");
-        user.setLastName("Smith");
-        user.setUsername("John.Smith");
-        user.setPassword("password12");
-        user.setIsActive(true);
+    void save_shouldPersistUserAndReturnSameEntity() {
+        User user = user(null, "John", "Smith", "John.Smith");
+        doAnswer(invocation -> {
+            user.setId(1L);
+            return null;
+        }).when(entityManager).persist(user);
 
         User saved = userRepository.save(user);
 
+        assertThat(saved).isSameAs(user);
         assertThat(saved.getId()).isEqualTo(1L);
-        assertThat(userRepository.getById(1L)).isSameAs(saved);
+        verify(transaction).begin();
+        verify(entityManager).persist(user);
+        verify(transaction).commit();
     }
 
     @Test
-    void getByUsername_shouldReturnUser_whenExists() {
-        User user = new User();
-        user.setUsername("John.Smith");
+    void getById_shouldReturnOptionalWithUser_whenExists() {
+        User user = user(1L, "John", "Smith", "John.Smith");
+        when(entityManager.find(User.class, 1L)).thenReturn(user);
 
-        userRepository.save(user);
+        Optional<User> result = userRepository.getById(1L);
 
-        User result = userRepository.getByUsername("John.Smith");
-
-        assertThat(result).isSameAs(user);
+        assertThat(result).contains(user);
     }
 
     @Test
-    void getByUsername_shouldReturnNull_whenDoesNotExist() {
-        User result = userRepository.getByUsername("missing");
+    void getByUsername_shouldReturnOptionalWithUser_whenExists() {
+        User user = user(1L, "John", "Smith", "John.Smith");
+        when(entityManager.createQuery(anyString(), eq(User.class))).thenReturn(userQuery);
+        when(userQuery.setParameter("username", "John.Smith")).thenReturn(userQuery);
+        when(userQuery.getSingleResultOrNull()).thenReturn(user);
 
-        assertThat(result).isNull();
+        Optional<User> result = userRepository.getByUsername("John.Smith");
+
+        assertThat(result).contains(user);
+        verify(userQuery).setParameter("username", "John.Smith");
+    }
+
+    @Test
+    void getByUsername_shouldReturnEmptyOptional_whenDoesNotExist() {
+        when(entityManager.createQuery(anyString(), eq(User.class))).thenReturn(userQuery);
+        when(userQuery.setParameter("username", "missing")).thenReturn(userQuery);
+        when(userQuery.getSingleResultOrNull()).thenReturn(null);
+
+        Optional<User> result = userRepository.getByUsername("missing");
+
+        assertThat(result).isEmpty();
     }
 
     @Test
     void existsByUsername_shouldReturnTrue_whenUsernameExists() {
-        User user = new User();
-        user.setUsername("John.Smith");
+        when(entityManager.createQuery(anyString(), eq(User.class))).thenReturn(userQuery);
+        when(userQuery.setParameter("username", "John.Smith")).thenReturn(userQuery);
+        when(userQuery.getSingleResultOrNull()).thenReturn(user(1L, "John", "Smith", "John.Smith"));
 
-        userRepository.save(user);
-
-        boolean result = userRepository.existsByUsername("John.Smith");
-
-        assertThat(result).isTrue();
+        assertThat(userRepository.existsByUsername("John.Smith")).isTrue();
     }
 
     @Test
-    void existsByUsername_shouldReturnFalse_whenUsernameDoesNotExist() {
-        boolean result = userRepository.existsByUsername("missing");
+    void update_shouldMergeExistingUser() {
+        User user = user(1L, "Johnny", "Smith", "John.Smith");
+        when(entityManager.find(User.class, 1L)).thenReturn(user);
+        when(entityManager.merge(user)).thenReturn(user);
 
-        assertThat(result).isFalse();
-    }
+        User updated = userRepository.update(user);
 
-    @Test
-    void update_shouldReplaceExistingUser() {
-        User user = new User();
-        user.setFirstName("John");
-        user.setUsername("John.Smith");
-
-        User saved = userRepository.save(user);
-        saved.setFirstName("Johnny");
-
-        User updated = userRepository.update(saved);
-
-        assertThat(updated.getFirstName()).isEqualTo("Johnny");
-        assertThat(userRepository.getById(saved.getId()).getFirstName()).isEqualTo("Johnny");
+        assertThat(updated).isSameAs(user);
+        verify(transaction).begin();
+        verify(entityManager).merge(user);
+        verify(transaction).commit();
     }
 
     @Test
     void update_shouldThrowException_whenUserDoesNotExist() {
-        User user = new User();
-        user.setId(999L);
+        User user = user(999L, "John", "Smith", "John.Smith");
+        when(entityManager.find(User.class, 999L)).thenReturn(null);
+        when(transaction.isActive()).thenReturn(true);
 
         assertThatThrownBy(() -> userRepository.update(user))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("User does not exist");
+        verify(transaction).rollback();
     }
 
     @Test
     void delete_shouldRemoveUser() {
+        User user = user(1L, "John", "Smith", "John.Smith");
+        when(entityManager.find(User.class, 1L)).thenReturn(user);
+
+        userRepository.delete(1L);
+
+        verify(entityManager).remove(user);
+        verify(transaction).commit();
+    }
+
+    private static User user(Long id, String firstName, String lastName, String username) {
         User user = new User();
-        user.setUsername("John.Smith");
-
-        User saved = userRepository.save(user);
-
-        userRepository.delete(saved.getId());
-
-        assertThat(userRepository.getById(saved.getId())).isNull();
+        user.setId(id);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setUsername(username);
+        user.setPassword("password12");
+        user.setIsActive(true);
+        return user;
     }
 }

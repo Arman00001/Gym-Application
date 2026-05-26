@@ -1,66 +1,100 @@
 package com.epam.gymapp.persistence.repository.trainer;
 
 import com.epam.gymapp.persistence.entity.Trainer;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 @Repository
 public class TrainerRepositoryImpl implements TrainerRepository {
     private static final Logger log = LoggerFactory.getLogger(TrainerRepositoryImpl.class);
-
-    private Map<Long, Trainer> storage;
-    private Long lastId = 0L;
+    private EntityManager entityManager;
 
     @Autowired
-    public void setStorage(@Qualifier("trainerStorage") Map<Long, Trainer> storage) {
-        this.storage = storage;
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 
     @Override
     public Trainer save(Trainer trainer) {
-        Long newId = ++lastId;
-        trainer.setId(newId);
-        storage.put(newId, trainer);
+        EntityTransaction transaction = entityManager.getTransaction();
 
-        log.debug("Saved trainer to storage. id={}", trainer.getId());
-        return trainer;
+        try {
+            transaction.begin();
+
+            entityManager.persist(trainer);
+            transaction.commit();
+            log.debug("Saved trainer to database. id={}", trainer.getId());
+            return trainer;
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            throw e;
+        }
     }
 
     @Override
     public Trainer update(Trainer trainer) {
-        if(!storage.containsKey(trainer.getId())){
-            log.warn("Cannot update trainer. Not found in storage. id={}", trainer.getId());
-            throw new IllegalArgumentException("Trainer does not exist");
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        try {
+            transaction.begin();
+
+            if (trainer.getId() == null) {
+                throw new IllegalArgumentException("Trainer id must not be null");
+            }
+            if (entityManager.find(Trainer.class, trainer.getId()) == null) {
+                log.warn("Cannot update trainer. Not found in storage. id={}", trainer.getId());
+                throw new IllegalArgumentException("Trainer does not exist");
+            }
+            Trainer updatedTrainer = entityManager.merge(trainer);
+            transaction.commit();
+            log.debug("Updated trainer in database. id={}", updatedTrainer.getId());
+            return updatedTrainer;
+        } catch (Exception e){
+            if(transaction.isActive()){
+                transaction.rollback();
+            }
+            throw e;
         }
-        storage.put(trainer.getId(), trainer);
-
-        log.debug("Updated trainer in storage. id={}", trainer.getId());
-        return trainer;
     }
 
     @Override
-    public Trainer get(Long id) {
+    public Optional<Trainer> get(Long id) {
         log.debug("Getting trainer from storage. id={}", id);
-        return storage.get(id);
+        return Optional.ofNullable(entityManager.find(Trainer.class, id));
     }
 
     @Override
-    public Trainer getByUserId(Long userId) {
-        return storage.values().stream()
-                .filter(trainer -> trainer.getUserId().equals(userId))
-                .findFirst()
-                .orElse(null);
+    public Optional<Trainer> getByUserId(Long userId) {
+        return Optional.ofNullable(
+                entityManager
+                        .createQuery("SELECT t FROM Trainer t WHERE t.user.id = :userId", Trainer.class)
+                        .setParameter("userId", userId)
+                        .getSingleResultOrNull()
+        );
     }
 
     @Override
     public List<Trainer> getAll() {
-        return new ArrayList<>(storage.values());
+        return entityManager
+                .createQuery("SELECT t FROM Trainer t", Trainer.class)
+                .getResultList();
+    }
+
+    @Override
+    public Optional<Trainer> getByUsername(String username) {
+        return Optional.ofNullable(
+                entityManager
+                        .createQuery("SELECT t FROM Trainer t WHERE t.user.username = :username", Trainer.class)
+                        .setParameter("username", username)
+                        .getSingleResultOrNull());
     }
 }

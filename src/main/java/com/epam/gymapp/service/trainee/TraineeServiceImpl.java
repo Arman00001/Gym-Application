@@ -4,7 +4,6 @@ import com.epam.gymapp.dto.trainee.TraineeCreateDto;
 import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
 import com.epam.gymapp.dto.trainee.TraineeDto;
 import com.epam.gymapp.dto.trainee.TraineeUpdateDto;
-import com.epam.gymapp.dto.user.UserUpdateDto;
 import com.epam.gymapp.mapper.TraineeMapper;
 import com.epam.gymapp.mapper.UserMapper;
 import com.epam.gymapp.persistence.entity.Trainee;
@@ -28,7 +27,8 @@ public class TraineeServiceImpl implements TraineeService {
         this.traineeRepository = traineeRepository;
     }
 
-    @Autowired void setUserService(UserService userService){
+    @Autowired
+    void setUserService(UserService userService) {
         this.userService = userService;
     }
 
@@ -41,98 +41,72 @@ public class TraineeServiceImpl implements TraineeService {
         User user = userService.createUser(UserMapper.INSTANCE.traineeToCreateUser(traineeCreateDto));
 
         Trainee trainee = TraineeMapper.INSTANCE.mapCreateToTrainee(traineeCreateDto);
-        trainee.setUserId(user.getId());
+        trainee.setUser(user);
 
         traineeRepository.save(trainee);
 
         log.info("Trainee profile created successfully. username={}", user.getUsername());
 
-        TraineeCreateResponse response = new TraineeCreateResponse();
-        response.setUsername(user.getUsername());
-        response.setPassword(user.getPassword());
-
-        return response;
+        return TraineeMapper.INSTANCE.mapToCreateResponse(user);
     }
 
     @Override
     public TraineeDto updateTrainee(TraineeUpdateDto dto) {
         log.info("Updating trainee profile. username={}", dto.getUsername());
 
-        User user = userService.getByUsername(dto.getUsername());
-        UserUpdateDto userDto = UserMapper.INSTANCE.traineeToUpdateUser(dto);
-        userDto.setId(user.getId());
+        Trainee existing = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(()->{
+            log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
+            return new IllegalArgumentException("Trainee does not exist");
+        });
 
-        var updatedUser = userService.updateUser(userDto);
-        if(updatedUser == null){
-            log.warn("Cannot update user profile. User not found. username={}",dto.getUsername());
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
-
-        Trainee existing = traineeRepository.getByUserId(updatedUser.getId());
-
-        if (existing == null) {
-            log.warn("Cannot update trainee. Trainee not found. username={}", updatedUser.getUsername());
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
+        User user = existing.getUser();
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setIsActive(dto.getIsActive());
 
         existing.setDateOfBirth(dto.getDateOfBirth());
         existing.setAddress(dto.getAddress());
 
         Trainee updated = traineeRepository.update(existing);
 
-        log.info("Trainee profile updated successfully. username={}", updatedUser.getUsername());
+        log.info("Trainee profile updated successfully. username={}", user.getUsername());
 
-        return TraineeMapper.INSTANCE.mapToDto(updated, updatedUser);
+        return TraineeMapper.INSTANCE.mapToDto(updated, user);
     }
 
     @Override
     public void deleteTrainee(Long id) {
         log.info("Deleting trainee profile. id={}", id);
-        Trainee trainee = traineeRepository.delete(id);
-        userService.deleteUser(trainee.getUserId());
-
+        traineeRepository.delete(id);
         log.info("Trainee profile deleted. id={}", id);
     }
 
     @Override
     public void deleteTraineeByUsername(String username) {
         log.info("Deleting trainee profile. username={}", username);
-        User user = userService.getByUsername(username);
-        if(user==null){
-            log.warn("User not found. username={}",username);
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
-
-        traineeRepository.deleteByUserId(user.getId());
-        userService.deleteUser(user.getId());
-        log.info("Trainee deleted. username={}",username);
+        traineeRepository.deleteByUsername(username);
     }
 
     @Override
     public TraineeDto getTraineeById(Long id) {
         log.info("Getting trainee profile. id={}", id);
 
-        Trainee trainee = traineeRepository.get(id);
-        if (trainee == null) {
+        Trainee trainee = traineeRepository.get(id).orElseThrow(() -> {
             log.warn("Trainee profile not found. id={}", id);
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
-        User user = userService.getById(trainee.getUserId());
+            return new IllegalArgumentException("Trainee does not exist");
+        });
 
-        return TraineeMapper.INSTANCE.mapToDto(trainee, user);
+        return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
     }
 
     @Override
     public TraineeDto getTraineeByUsername(String username) {
         log.info("Getting trainee profile. username={}", username);
-        User user = userService.getByUsername(username);
-
-        Trainee trainee = traineeRepository.getByUserId(user.getId());
-        if (trainee == null) {
+        Trainee trainee = traineeRepository.getByUsername(username).orElseThrow(()->{
             log.warn("Trainee profile not found. username={}", username);
-            throw new IllegalArgumentException("Trainee does not exist");
-        }
+            return new IllegalArgumentException("Trainee does not exist");
+        });
 
-        return TraineeMapper.INSTANCE.mapToDto(trainee, user);
+        return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
     }
 }

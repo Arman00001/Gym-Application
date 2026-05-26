@@ -13,13 +13,19 @@ dependencies {
     implementation("org.springframework:spring-context:7.0.7")
     implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
 
+    implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
+    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+
+    implementation("org.hibernate:hibernate-core:7.3.5.Final")
+    implementation("org.postgresql:postgresql:42.7.11")
+
     implementation("org.mapstruct:mapstruct:1.6.3")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 
     implementation("org.slf4j:slf4j-api:2.0.17")
     runtimeOnly("org.slf4j:slf4j-simple:2.0.17")
 
-    implementation("org.projectlombok:lombok:1.18.46")
+    compileOnly("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 

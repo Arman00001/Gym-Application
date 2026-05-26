@@ -13,7 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import java.util.Optional;
+
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -100,7 +101,7 @@ class UserServiceImplTest {
         User user = new User();
         user.setUsername("John.Smith");
 
-        when(userRepository.getByUsername("John.Smith")).thenReturn(user);
+        when(userRepository.getByUsername("John.Smith")).thenReturn(Optional.of(user));
 
         User result = userService.getByUsername("John.Smith");
 
@@ -109,7 +110,7 @@ class UserServiceImplTest {
 
     @Test
     void getByUsername_shouldThrowException_whenUserDoesNotExist() {
-        when(userRepository.getByUsername("missing")).thenReturn(null);
+        when(userRepository.getByUsername("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.getByUsername("missing"))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -133,7 +134,7 @@ class UserServiceImplTest {
         existing.setPassword("oldPassword");
         existing.setIsActive(true);
 
-        when(userRepository.getById(1L)).thenReturn(existing);
+        when(userRepository.getById(1L)).thenReturn(Optional.of(existing));
         when(userRepository.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = userService.updateUser(dto);

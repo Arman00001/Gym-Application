@@ -1,5 +1,6 @@
 package com.epam.gymapp;
 
+import com.epam.gymapp.configuration.RepoConfig;
 import com.epam.gymapp.dto.trainee.TraineeCreateDto;
 import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
 import com.epam.gymapp.dto.trainee.TraineeDto;
@@ -17,7 +18,8 @@ public class GymApplication {
 
     public static void main(String[] args) {
         try (AnnotationConfigApplicationContext context =
-                     new AnnotationConfigApplicationContext(GymApplication.class)) {
+                     new AnnotationConfigApplicationContext(GymApplication.class, RepoConfig.class)) {
+
 
             GymFacade facade = context.getBean(GymFacade.class);
 
