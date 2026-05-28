@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Duration;
 import java.time.OffsetDateTime;
 
 @Getter
@@ -35,5 +34,5 @@ public class Training {
     private OffsetDateTime date;
 
     @Column(name = "duration", nullable = false)
-    private Duration duration;
+    private Long duration;
 }

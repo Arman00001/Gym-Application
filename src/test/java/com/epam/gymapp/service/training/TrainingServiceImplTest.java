@@ -59,14 +59,14 @@ class TrainingServiceImplTest {
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("Morning Yoga");
         assertThat(result.getDate()).isEqualTo(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
-        assertThat(result.getDuration()).isEqualTo(Duration.ofHours(1));
+        assertThat(result.getDuration()).isEqualTo(10000L);
         verify(trainingRepository).save(argThat(training ->
                 training.getTrainee() == trainee
                         && training.getTrainer() == trainer
                         && training.getType() == type
                         && training.getName().equals("Morning Yoga")
                         && training.getDate().equals(OffsetDateTime.parse("2025-01-01T10:00:00Z"))
-                        && training.getDuration().equals(Duration.ofHours(1))
+                        && training.getDuration().equals(10000L)
         ));
     }
 
@@ -104,7 +104,7 @@ class TrainingServiceImplTest {
         training.setName("Morning Yoga");
         training.setType(type);
         training.setDate(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
-        training.setDuration(Duration.ofHours(1));
+        training.setDuration(10000L);
         when(trainingRepository.get(1L)).thenReturn(Optional.of(training));
 
         TrainingDto result = trainingService.getTraining(1L);
@@ -113,7 +113,7 @@ class TrainingServiceImplTest {
         assertThat(result.getName()).isEqualTo("Morning Yoga");
         assertThat(result.getType()).isSameAs(type);
         assertThat(result.getDate()).isEqualTo(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
-        assertThat(result.getDuration()).isEqualTo(Duration.ofHours(1));
+        assertThat(result.getDuration()).isEqualTo(10000L);
         verify(trainingRepository).get(1L);
     }
 
@@ -135,7 +135,7 @@ class TrainingServiceImplTest {
         dto.setName("Morning Yoga");
         dto.setDate(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
         dto.setType(type);
-        dto.setDuration(Duration.ofHours(1));
+        dto.setDuration(10000L);
         return dto;
     }
 

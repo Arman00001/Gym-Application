@@ -182,7 +182,7 @@ public class StorageInitializer {
         training.setType(trainingType);
 
         training.setDate(OffsetDateTime.parse(parts[6]));
-        training.setDuration(Duration.ofMinutes(Long.parseLong(parts[7])));
+        training.setDuration(Long.parseLong(parts[7]));
 
         validateTraineeExists(training.getTrainee().getId());
         validateTrainerExists(training.getTrainer().getId());
