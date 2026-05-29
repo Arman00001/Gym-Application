@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -161,7 +161,7 @@ class TraineeRepositoryImplTest {
         Trainee trainee = new Trainee();
         trainee.setId(id);
         trainee.setUser(user);
-        trainee.setDateOfBirth(OffsetDateTime.parse("2000-01-01T00:00:00Z"));
+        trainee.setDateOfBirth(LocalDate.parse("2000-01-01"));
         trainee.setAddress("New York");
         return trainee;
     }

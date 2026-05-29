@@ -7,9 +7,15 @@ import java.util.Optional;
 public interface UserRepository {
     User save(User user);
     User update(User user);
+
     void delete(Long id);
     void deleteUser(User user);
+
     Optional<User> getById(Long id);
     Optional<User> getByUsername(String username);
+
     boolean existsByUsername(String username);
+    boolean isAuthenticated(String username, String password);
+
+    void changePassword(String username, String newPassword);
 }

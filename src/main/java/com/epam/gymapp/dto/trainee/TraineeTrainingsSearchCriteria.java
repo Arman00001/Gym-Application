@@ -8,14 +8,16 @@ import java.time.LocalDate;
 
 @Getter
 @Setter
-public class TraineeUpdateDto {
+public class TraineeTrainingsSearchCriteria {
     @NotBlank
     private String username;
     @NotBlank
     private String password;
-    private String firstName;
-    private String lastName;
-    private Boolean isActive;
-    private LocalDate dateOfBirth;
-    private String address;
+
+    private LocalDate fromDate;
+    private LocalDate toDate;
+
+    private String trainerFirstName;
+    private String trainerLastName;
+    private String trainingType;
 }

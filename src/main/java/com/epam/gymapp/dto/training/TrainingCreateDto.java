@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -18,7 +18,7 @@ public class TrainingCreateDto {
     @NotBlank
     private String name;
     @NotNull
-    private OffsetDateTime date;
+    private LocalDate date;
     @NotNull
     private TrainingType type;
     @NotNull

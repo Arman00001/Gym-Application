@@ -26,4 +26,7 @@ public class Trainer {
 
     @OneToMany(mappedBy = "trainer")
     private List<Training> trainings = new ArrayList<>();
+
+    @ManyToMany(mappedBy = "trainers")
+    private List<Trainee> trainees = new ArrayList<>();
 }

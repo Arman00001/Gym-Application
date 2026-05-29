@@ -1,19 +1,15 @@
-package com.epam.gymapp.dto.trainer;
+package com.epam.gymapp.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-
 @Getter
 @Setter
-public class TrainerUpdateDto {
+public class DeleteRequestDto {
     @NotBlank
     private String username;
     @NotBlank
     private String password;
-    private String firstName;
-    private String lastName;
-    private Boolean isActive;
-    private String specialization;
+    private Long id;
 }

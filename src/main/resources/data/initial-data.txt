@@ -1,8 +1,14 @@
 # Format:
 # USER;id;firstName;lastName;username;password;isActive
 # TRAINEE;id;userId;dateOfBirth;address
-# TRAINER;id;userId;specialization;trainingType
-# TRAINING;id;traineeId;trainerId;name;trainingType;date;durationMinutes
+# TRAINER;id;userId;specialization;trainingTypeId
+# TRAINING_TYPE;id;trainingTypeName
+# TRAINING;id;traineeId;trainerId;name;trainingTypeId;date;durationMinutes
+
+TRAINING_TYPE;1;Yoga
+TRAINING_TYPE;2;Fitness
+TRAINING_TYPE;3;Strength
+TRAINING_TYPE;4;Boxing
 
 USER;1;John;Smith;John.Smith;Pass123456;true
 USER;2;Anna;Brown;Anna.Brown;Qwerty1234;true
@@ -13,17 +19,17 @@ USER;6;Emma;Wilson;Emma.Wilson;Fitpass789;true
 USER;7;David;Miller;David.Miller;Strong5678;true
 USER;8;Alex;Johnson;Alex.Johnson1;Coach12345;false
 
-TRAINEE;1;1;2000-01-15T00:00:00Z;New York
-TRAINEE;2;2;1998-05-20T00:00:00Z;Boston
-TRAINEE;3;3;1995-09-10T00:00:00Z;Chicago
-TRAINEE;4;4;2001-12-03T00:00:00Z;Seattle
+TRAINEE;1;1;2000-01-15;New York
+TRAINEE;2;2;1998-05-20;Boston
+TRAINEE;3;3;1995-09-10;Chicago
+TRAINEE;4;4;2001-12-03;Seattle
 
-TRAINER;1;5;Yoga;Yoga
-TRAINER;2;6;Fitness;Fitness
-TRAINER;3;7;Strength;Strength
-TRAINER;4;8;Boxing;Boxing
+TRAINER;1;5;Yoga;1
+TRAINER;2;6;Fitness;2
+TRAINER;3;7;Strength;3
+TRAINER;4;8;Boxing;4
 
-TRAINING;1;1;1;Morning Yoga;Yoga;2026-05-20T09:00:00Z;60
-TRAINING;2;2;2;Full Body Fitness;Fitness;2026-05-21T11:00:00Z;45
-TRAINING;3;1;3;Strength Basics;Strength;2026-05-22T18:30:00Z;90
-TRAINING;4;4;1;Evening Yoga;Yoga;2026-05-23T19:00:00Z;60
+TRAINING;1;1;1;Morning Yoga;1;2026-05-20;60
+TRAINING;2;2;2;Full Body Fitness;2;2026-05-21;45
+TRAINING;3;1;3;Strength Basics;3;2026-05-22;90
+TRAINING;4;4;1;Evening Yoga;1;2026-05-23;60

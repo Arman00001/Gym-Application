@@ -18,8 +18,9 @@ import org.springframework.stereotype.Component;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class StorageInitializer {
@@ -30,6 +31,15 @@ public class StorageInitializer {
 
     @Value("${storage.init.file}")
     private String initFilePath;
+
+    @Value("${storage.training.types:}")
+    private String trainingTypesPath;
+
+    private final Map<Long, User> usersByFileId = new HashMap<>();
+    private final Map<Long, Trainee> traineesByFileId = new HashMap<>();
+    private final Map<Long, Trainer> trainersByFileId = new HashMap<>();
+    private final Map<Long, TrainingType> trainingTypesByFileId = new HashMap<>();
+    private final Map<String, TrainingType> trainingTypesByName = new HashMap<>();
 
     public StorageInitializer(
             @Qualifier("entityManager") EntityManager entityManager
@@ -53,6 +63,8 @@ public class StorageInitializer {
                 transaction.rollback();
                 return;
             }
+
+            loadTrainingTypes();
 
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)
@@ -103,6 +115,7 @@ public class StorageInitializer {
             case "USER" -> parseUser(parts);
             case "TRAINEE" -> parseTrainee(parts);
             case "TRAINER" -> parseTrainer(parts);
+            case "TRAINING_TYPE" -> parseTrainingType(parts);
             case "TRAINING" -> parseTraining(parts);
             default -> log.warn("Unknown storage record type: {}", type);
         }
@@ -111,9 +124,9 @@ public class StorageInitializer {
     private void parseUser(String[] parts) {
         validateLength(parts, 7, "USER");
 
+        Long fileId = Long.parseLong(parts[1]);
         User user = new User();
 
-//        user.setId(Long.parseLong(parts[1]));
         user.setFirstName(parts[2]);
         user.setLastName(parts[3]);
         user.setUsername(parts[4]);
@@ -121,23 +134,24 @@ public class StorageInitializer {
         user.setIsActive(Boolean.parseBoolean(parts[6]));
 
         entityManager.persist(user);
+        usersByFileId.put(fileId, user);
 
-        log.debug("Initialized user: id={}, username={}", user.getId(), user.getUsername());
+        log.debug("Initialized user: fileId={}, id={}, username={}", fileId, user.getId(), user.getUsername());
     }
 
     private void parseTrainee(String[] parts) {
         validateLength(parts, 5, "TRAINEE");
 
-        Trainee trainee = new Trainee();
+        Long fileId = Long.parseLong(parts[1]);
+        Long userFileId = Long.parseLong(parts[2]);
 
-//        trainee.setId(Long.parseLong(parts[1]));
-        trainee.setUser(entityManager.find(User.class, Long.parseLong(parts[2])));
-        trainee.setDateOfBirth(OffsetDateTime.parse(parts[3]));
+        Trainee trainee = new Trainee();
+        trainee.setUser(getUser(userFileId, "TRAINEE"));
+        trainee.setDateOfBirth(parseDate(parts[3]));
         trainee.setAddress(parts[4]);
 
-        validateUserExists(trainee.getUser().getId(), "TRAINEE");
-
         entityManager.persist(trainee);
+        traineesByFileId.put(fileId, trainee);
 
         log.debug(
                 "Initialized trainee: id={}, userId={}",
@@ -149,17 +163,17 @@ public class StorageInitializer {
     private void parseTrainer(String[] parts) {
         validateLength(parts, 5, "TRAINER");
 
+        Long fileId = Long.parseLong(parts[1]);
+        Long userFileId = Long.parseLong(parts[2]);
+
         Trainer trainer = new Trainer();
+        trainer.setUser(getUser(userFileId, "TRAINER"));
 
-//        trainer.setId(Long.parseLong(parts[1]));
-        trainer.setUser(entityManager.find(User.class, Long.parseLong(parts[2])));
-
-        TrainingType trainingType = getOrCreateTrainingType(parts[4]);
+        TrainingType trainingType = getTrainingType(parts[4]);
         trainer.setSpecialization(trainingType);
 
-        validateUserExists(trainer.getUser().getId(), "TRAINER");
-
         entityManager.persist(trainer);
+        trainersByFileId.put(fileId, trainer);
 
         log.debug(
                 "Initialized trainer: id={}, userId={}",
@@ -173,46 +187,51 @@ public class StorageInitializer {
 
         Training training = new Training();
 
-//        training.setId(Long.parseLong(parts[1]));
-        training.setTrainee(entityManager.find(Trainee.class, Long.parseLong(parts[2])));
-        training.setTrainer(entityManager.find(Trainer.class, Long.parseLong(parts[3])));
+        training.setTrainee(getTrainee(Long.parseLong(parts[2])));
+        training.setTrainer(getTrainer(Long.parseLong(parts[3])));
         training.setName(parts[4]);
 
-        TrainingType trainingType = getOrCreateTrainingType(parts[5]);
+        TrainingType trainingType = getTrainingType(parts[5]);
         training.setType(trainingType);
 
-        training.setDate(OffsetDateTime.parse(parts[6]));
+        training.setDate(parseDate(parts[6]));
         training.setDuration(Long.parseLong(parts[7]));
-
-        validateTraineeExists(training.getTrainee().getId());
-        validateTrainerExists(training.getTrainer().getId());
 
         entityManager.persist(training);
 
         log.debug("Initialized training: id={}", training.getId());
     }
 
-    private void validateUserExists(Long userId, String recordType) {
-        if (entityManager.find(User.class, userId) == null)
-            throw new IllegalArgumentException(
-                    recordType + " references non-existing userId=" + userId
-            );
+    private User getUser(Long fileId, String recordType) {
+        User user = usersByFileId.get(fileId);
+        if (user == null) {
+            throw new IllegalArgumentException(recordType + " references non-existing userId=" + fileId);
+        }
+        return user;
     }
 
-    private void validateTraineeExists(Long traineeId) {
-        if (entityManager.find(Trainee.class, traineeId) == null) {
-            throw new IllegalArgumentException(
-                    "TRAINING references non-existing traineeId=" + traineeId
-            );
+    private Trainee getTrainee(Long fileId) {
+        Trainee trainee = traineesByFileId.get(fileId);
+        if (trainee == null) {
+            throw new IllegalArgumentException("TRAINING references non-existing traineeId=" + fileId);
         }
+        return trainee;
     }
 
-    private void validateTrainerExists(Long trainerId) {
-        if (entityManager.find(Trainer.class, trainerId) == null) {
-            throw new IllegalArgumentException(
-                    "TRAINING references non-existing trainerId=" + trainerId
-            );
+    private Trainer getTrainer(Long fileId) {
+        Trainer trainer = trainersByFileId.get(fileId);
+        if (trainer == null) {
+            throw new IllegalArgumentException("TRAINING references non-existing trainerId=" + fileId);
         }
+        return trainer;
+    }
+
+    private LocalDate parseDate(String value) {
+        String trimmedValue = value.trim();
+        if (trimmedValue.contains("T")) {
+            return LocalDate.parse(trimmedValue.substring(0, trimmedValue.indexOf('T')));
+        }
+        return LocalDate.parse(trimmedValue);
     }
 
     private void validateLength(String[] parts, int expectedLength, String recordType) {
@@ -225,7 +244,100 @@ public class StorageInitializer {
         }
     }
 
-    private TrainingType getOrCreateTrainingType(String name) {
+    private void loadTrainingTypes() throws Exception {
+        if (trainingTypesPath == null || trainingTypesPath.isBlank()) {
+            log.warn("No training types file configured. Set storage.training.types in application.properties");
+            return;
+        }
+
+        log.info("Initializing training types from file: {}", trainingTypesPath);
+
+        ClassPathResource resource = new ClassPathResource(trainingTypesPath);
+        if (!resource.exists()) {
+            throw new IllegalArgumentException("Training types initialization file was not found: " + trainingTypesPath);
+        }
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)
+        )) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+
+                if (line.isEmpty() || line.startsWith("#")) {
+                    continue;
+                }
+
+                parseTrainingType(line.split(";"));
+            }
+        }
+
+        log.info("Training types initialized successfully. count={}", trainingTypesByName.size());
+    }
+
+    private void parseTrainingType(String[] parts) {
+        Long fileId = null;
+        String name;
+
+        if (parts.length == 3 && "TRAINING_TYPE".equals(parts[0])) {
+            fileId = Long.parseLong(parts[1]);
+            name = parts[2];
+        } else if (parts.length == 2) {
+            fileId = Long.parseLong(parts[0]);
+            name = parts[1];
+        } else if (parts.length == 1) {
+            name = parts[0];
+        } else {
+            throw new IllegalArgumentException("Invalid TRAINING_TYPE record");
+        }
+
+        TrainingType trainingType = findTrainingTypeByName(name);
+        if (trainingType == null) {
+            trainingType = new TrainingType();
+            trainingType.setName(name);
+            entityManager.persist(trainingType);
+            entityManager.flush();
+        }
+
+        trainingTypesByName.put(name, trainingType);
+        if (fileId != null) {
+            trainingTypesByFileId.put(fileId, trainingType);
+        }
+
+        log.debug("Initialized training type: fileId={}, name={}", fileId, name);
+    }
+
+    private TrainingType getTrainingType(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Training type must not be blank");
+        }
+
+        String trimmedValue = value.trim();
+
+        if (trimmedValue.matches("\\d+")) {
+            TrainingType trainingType = trainingTypesByFileId.get(Long.parseLong(trimmedValue));
+            if (trainingType != null) {
+                return trainingType;
+            }
+        }
+
+        TrainingType trainingType = trainingTypesByName.get(trimmedValue);
+        if (trainingType != null) {
+            return trainingType;
+        }
+
+        trainingType = findTrainingTypeByName(trimmedValue);
+        if (trainingType != null) {
+            trainingTypesByName.put(trimmedValue, trainingType);
+            return trainingType;
+        }
+
+        throw new IllegalArgumentException(
+                "Unknown training type: " + value + ". Add it to " + trainingTypesPath
+        );
+    }
+
+    private TrainingType findTrainingTypeByName(String name) {
         return entityManager
                 .createQuery(
                         "SELECT t FROM TrainingType t WHERE t.name = :name",
@@ -234,11 +346,6 @@ public class StorageInitializer {
                 .setParameter("name", name)
                 .getResultStream()
                 .findFirst()
-                .orElseGet(() -> {
-                    TrainingType trainingType = new TrainingType();
-                    trainingType.setName(name);
-                    entityManager.persist(trainingType);
-                    return trainingType;
-                });
+                .orElse(null);
     }
 }

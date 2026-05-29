@@ -1,6 +1,9 @@
 package com.epam.gymapp.persistence.repository.trainee;
 
+import com.epam.gymapp.dto.trainee.TraineeTrainingsSearchCriteria;
 import com.epam.gymapp.persistence.entity.Trainee;
+import com.epam.gymapp.persistence.entity.Training;
+import com.epam.gymapp.persistence.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import org.slf4j.Logger;
@@ -174,5 +177,39 @@ public class TraineeRepositoryImpl implements TraineeRepository {
                         .setParameter("username", username)
                         .getSingleResultOrNull());
 
+    }
+
+    @Override
+    public List<Training> getTrainingsByCriteria(TraineeTrainingsSearchCriteria criteria) {
+        return entityManager
+                .createQuery("SELECT trainings " +
+                        "FROM Trainee t " +
+                        "JOIN t.trainings trainings " +
+                        "WHERE t.user.username = :username " +
+                        "AND (:firstName IS NULL OR LOWER(trainings.trainer.user.firstName) LIKE LOWER(CONCAT('%',:firstName,'%'))) " +
+                        "AND (:lastName IS NULL OR LOWER(trainings.trainer.user.lastName) LIKE LOWER(CONCAT('%',:lastName,'%'))) " +
+                        "AND (:trainingType IS NULL OR LOWER(trainings.type.name) LIKE LOWER(CONCAT('%',:trainingType,'%'))) " +
+                        "AND (:fromDate IS NULL OR trainings.date >= :fromDate) " +
+                        "AND (:toDate IS NULL OR trainings.date <= :toDate)", Training.class)
+                .setParameter("username", criteria.getUsername())
+                .setParameter("firstName", criteria.getTrainerFirstName())
+                .setParameter("lastName", criteria.getTrainerLastName())
+                .setParameter("trainingType", criteria.getTrainingType())
+                .setParameter("fromDate", criteria.getFromDate())
+                .setParameter("toDate", criteria.getToDate())
+                .getResultList();
+    }
+
+    @Override
+    public Trainee changeIsActiveStatus(String username) {
+        Trainee trainee = entityManager
+                .createQuery("SELECT t FROM Trainee t WHERE t.user.username = :username", Trainee.class)
+                .setParameter("username", username)
+                .getSingleResult();
+
+        User user = trainee.getUser();
+        user.setIsActive(!user.getIsActive());
+
+        return trainee;
     }
 }

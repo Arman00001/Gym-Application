@@ -1,15 +1,25 @@
 package com.epam.gymapp.service.trainee;
 
-import com.epam.gymapp.dto.trainee.TraineeCreateDto;
-import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
-import com.epam.gymapp.dto.trainee.TraineeDto;
-import com.epam.gymapp.dto.trainee.TraineeUpdateDto;
+import com.epam.gymapp.dto.AuthenticationRequestDto;
+import com.epam.gymapp.dto.DeleteRequestDto;
+import com.epam.gymapp.dto.trainee.*;
+import com.epam.gymapp.dto.training.TrainingDto;
+
+import java.util.List;
 
 public interface TraineeService {
     TraineeCreateResponse createTrainee(TraineeCreateDto traineeCreateDto);
+
     TraineeDto updateTrainee(TraineeUpdateDto traineeCreateDto);
-    void deleteTrainee(Long id);
-    void deleteTraineeByUsername(String username);
+    TraineeDto updateTrainerList(TraineeTrainerListUpdateDto dto);
+
+    void deleteTrainee(DeleteRequestDto dto);
+    void deleteTraineeByUsername(DeleteRequestDto dto);
+
     TraineeDto getTraineeById(Long id);
-    TraineeDto getTraineeByUsername(String username);
+    TraineeDto getTraineeByUsername(AuthenticationRequestDto dto);
+    List<TrainingDto> searchTrainings(TraineeTrainingsSearchCriteria criteria);
+
+    TraineeDto changeIsActiveStatus(AuthenticationRequestDto auth);
+
 }

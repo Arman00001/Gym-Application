@@ -16,8 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,14 +57,14 @@ class TrainingServiceImplTest {
 
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("Morning Yoga");
-        assertThat(result.getDate()).isEqualTo(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
+        assertThat(result.getDate()).isEqualTo(LocalDate.parse("2025-01-01"));
         assertThat(result.getDuration()).isEqualTo(10000L);
         verify(trainingRepository).save(argThat(training ->
                 training.getTrainee() == trainee
                         && training.getTrainer() == trainer
                         && training.getType() == type
                         && training.getName().equals("Morning Yoga")
-                        && training.getDate().equals(OffsetDateTime.parse("2025-01-01T10:00:00Z"))
+                        && training.getDate().equals(LocalDate.parse("2025-01-01"))
                         && training.getDuration().equals(10000L)
         ));
     }
@@ -103,7 +102,7 @@ class TrainingServiceImplTest {
         training.setId(1L);
         training.setName("Morning Yoga");
         training.setType(type);
-        training.setDate(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
+        training.setDate(LocalDate.parse("2025-01-01"));
         training.setDuration(10000L);
         when(trainingRepository.get(1L)).thenReturn(Optional.of(training));
 
@@ -112,7 +111,7 @@ class TrainingServiceImplTest {
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("Morning Yoga");
         assertThat(result.getType()).isSameAs(type);
-        assertThat(result.getDate()).isEqualTo(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
+        assertThat(result.getDate()).isEqualTo(LocalDate.parse("2025-01-01"));
         assertThat(result.getDuration()).isEqualTo(10000L);
         verify(trainingRepository).get(1L);
     }
@@ -133,7 +132,7 @@ class TrainingServiceImplTest {
         dto.setTraineeUsername("John.Smith");
         dto.setTrainerUsername("Alex.Brown");
         dto.setName("Morning Yoga");
-        dto.setDate(OffsetDateTime.parse("2025-01-01T10:00:00Z"));
+        dto.setDate(LocalDate.parse("2025-01-01"));
         dto.setType(type);
         dto.setDuration(10000L);
         return dto;

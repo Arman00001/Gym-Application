@@ -4,17 +4,16 @@ import com.epam.gymapp.persistence.entity.TrainingType;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 
 @Getter
 @Setter
 public class TrainingDto {
     private Long id;
-    private Long userId;
     private String trainerUsername;
     private String traineeUsername;
     private String name;
     private TrainingType type;
-    private OffsetDateTime date;
+    private LocalDate date;
     private Long duration;
 }

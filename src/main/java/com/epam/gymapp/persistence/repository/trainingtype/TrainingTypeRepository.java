@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface TrainingTypeRepository {
     TrainingType save(TrainingType trainingType);
-    TrainingType update(TrainingType trainingType);
     void delete(Long id);
     void delete(TrainingType trainingType);
     Optional<TrainingType> get(Long id);

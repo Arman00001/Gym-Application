@@ -57,8 +57,8 @@ public class UserRepositoryImpl implements UserRepository {
             transaction.commit();
             log.debug("Updated user. id={}", updatedUser.getId());
             return updatedUser;
-        } catch (Exception e){
-            if(transaction.isActive()){
+        } catch (Exception e) {
+            if (transaction.isActive()) {
                 transaction.rollback();
             }
             throw e;
@@ -81,8 +81,8 @@ public class UserRepositoryImpl implements UserRepository {
             entityManager.remove(user);
             transaction.commit();
             log.debug("Deleted user. id={}", id);
-        } catch (Exception e){
-            if(transaction.isActive()){
+        } catch (Exception e) {
+            if (transaction.isActive()) {
                 transaction.rollback();
             }
             throw e;
@@ -108,8 +108,8 @@ public class UserRepositoryImpl implements UserRepository {
             entityManager.remove(user);
             transaction.commit();
             log.debug("Deleted user. id={}", user.getId());
-        } catch (Exception e){
-            if(transaction.isActive()){
+        } catch (Exception e) {
+            if (transaction.isActive()) {
                 transaction.rollback();
             }
             throw e;
@@ -133,5 +133,24 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public boolean existsByUsername(String username) {
         return getByUsername(username).isPresent();
+    }
+
+    @Override
+    public boolean isAuthenticated(String username, String password) {
+        return entityManager
+                .createQuery("SELECT u FROM User u WHERE u.username = :username AND u.password = :password", User.class)
+                .setParameter("username", username)
+                .setParameter("password", password)
+                .getSingleResultOrNull() != null;
+    }
+
+    @Override
+    public void changePassword(String username, String newPassword) {
+        User user = entityManager
+                .createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)
+                .setParameter("username", username)
+                .getSingleResult();
+
+        user.setPassword(newPassword);
     }
 }

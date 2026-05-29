@@ -1,6 +1,9 @@
 package com.epam.gymapp.persistence.repository.trainer;
 
+import com.epam.gymapp.dto.trainer.TrainerTrainingsSearchCriteria;
 import com.epam.gymapp.persistence.entity.Trainer;
+import com.epam.gymapp.persistence.entity.Training;
+import com.epam.gymapp.persistence.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
 import org.slf4j.Logger;
@@ -58,8 +61,8 @@ public class TrainerRepositoryImpl implements TrainerRepository {
             transaction.commit();
             log.debug("Updated trainer in database. id={}", updatedTrainer.getId());
             return updatedTrainer;
-        } catch (Exception e){
-            if(transaction.isActive()){
+        } catch (Exception e) {
+            if (transaction.isActive()) {
                 transaction.rollback();
             }
             throw e;
@@ -96,5 +99,59 @@ public class TrainerRepositoryImpl implements TrainerRepository {
                         .createQuery("SELECT t FROM Trainer t WHERE t.user.username = :username", Trainer.class)
                         .setParameter("username", username)
                         .getSingleResultOrNull());
+    }
+
+    @Override
+    public List<Trainer> getByUsernames(List<String> trainerUsernames) {
+        return entityManager
+                .createQuery("SELECT t FROM Trainer t WHERE t.user.username IN :trainerUsernames", Trainer.class)
+                .setParameter("trainerUsernames",trainerUsernames)
+                .getResultList()
+                ;
+    }
+
+    @Override
+    public List<Training> getTrainingsByCriteria(TrainerTrainingsSearchCriteria criteria) {
+        return entityManager
+                .createQuery("SELECT trainings " +
+                        "FROM Trainer t " +
+                        "JOIN t.trainings trainings " +
+                        "WHERE t.user.username = :username " +
+                        "AND (:firstName IS NULL OR LOWER(trainings.trainee.user.firstName) LIKE LOWER(CONCAT('%',:firstName,'%'))) " +
+                        "AND (:lastName IS NULL OR LOWER(trainings.trainee.user.lastName) LIKE LOWER(CONCAT('%',:lastName,'%'))) " +
+                        "AND (:fromDate IS NULL OR trainings.date >= :fromDate) " +
+                        "AND (:toDate IS NULL OR trainings.date <= :toDate)", Training.class)
+                .setParameter("username", criteria.getUsername())
+                .setParameter("firstName", criteria.getTraineeFirstName())
+                .setParameter("lastName", criteria.getTraineeLastName())
+                .setParameter("fromDate", criteria.getFromDate())
+                .setParameter("toDate", criteria.getToDate())
+                .getResultList();
+    }
+
+
+    @Override
+    public List<Trainer> getNotAssignedToTrainee(String username){
+        return entityManager
+                .createQuery("SELECT t FROM Trainer t " +
+                        "WHERE t.id NOT IN (" +
+                            "SELECT assignedTrainer.id FROM Trainee t JOIN t.trainers assignedTrainer " +
+                            "WHERE t.user.username = :username" +
+                        ")", Trainer.class)
+                .setParameter("username",username)
+                .getResultList();
+    }
+
+    @Override
+    public Trainer changeIsActiveStatus(String username) {
+        Trainer trainer = entityManager
+                .createQuery("SELECT t FROM Trainer t WHERE t.user.username = :username", Trainer.class)
+                .setParameter("username", username)
+                .getSingleResult();
+
+        User user = trainer.getUser();
+        user.setIsActive(!user.getIsActive());
+
+        return trainer;
     }
 }

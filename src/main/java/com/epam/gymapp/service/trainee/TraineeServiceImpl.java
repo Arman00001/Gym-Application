@@ -1,19 +1,26 @@
 package com.epam.gymapp.service.trainee;
 
-import com.epam.gymapp.dto.trainee.TraineeCreateDto;
-import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
-import com.epam.gymapp.dto.trainee.TraineeDto;
-import com.epam.gymapp.dto.trainee.TraineeUpdateDto;
+import com.epam.gymapp.dto.AuthenticationRequestDto;
+import com.epam.gymapp.dto.DeleteRequestDto;
+import com.epam.gymapp.dto.trainee.*;
+import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.mapper.TraineeMapper;
+import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.mapper.UserMapper;
 import com.epam.gymapp.persistence.entity.Trainee;
+import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
+import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.service.user.UserService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class TraineeServiceImpl implements TraineeService {
@@ -21,10 +28,22 @@ public class TraineeServiceImpl implements TraineeService {
 
     private TraineeRepository traineeRepository;
     private UserService userService;
+    private TrainerRepository trainerRepository;
+    private EntityManager entityManager;
 
     @Autowired
     public void setTraineeRepository(TraineeRepository traineeRepository) {
         this.traineeRepository = traineeRepository;
+    }
+
+    @Autowired
+    public void setTrainerRepository(TrainerRepository trainerRepository) {
+        this.trainerRepository = trainerRepository;
+    }
+
+    @Autowired
+    public void setEntityManager(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 
     @Autowired
@@ -53,38 +72,81 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     public TraineeDto updateTrainee(TraineeUpdateDto dto) {
         log.info("Updating trainee profile. username={}", dto.getUsername());
+        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
+            Trainee existing = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
+                log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
+                return new IllegalArgumentException("Trainee does not exist");
+            });
 
-        Trainee existing = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(()->{
-            log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
-            return new IllegalArgumentException("Trainee does not exist");
-        });
+            User user = existing.getUser();
+            user.setFirstName(dto.getFirstName());
+            user.setLastName(dto.getLastName());
+            user.setIsActive(dto.getIsActive());
 
-        User user = existing.getUser();
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setIsActive(dto.getIsActive());
+            existing.setDateOfBirth(dto.getDateOfBirth());
+            existing.setAddress(dto.getAddress());
 
-        existing.setDateOfBirth(dto.getDateOfBirth());
-        existing.setAddress(dto.getAddress());
+            Trainee updated = traineeRepository.update(existing);
 
-        Trainee updated = traineeRepository.update(existing);
+            log.info("Trainee profile updated successfully. username={}", user.getUsername());
 
-        log.info("Trainee profile updated successfully. username={}", user.getUsername());
+            return TraineeMapper.INSTANCE.mapToFullDto(updated);
+        }
 
-        return TraineeMapper.INSTANCE.mapToDto(updated, user);
+        throw new IllegalArgumentException("Incorrect Credentials");
     }
 
     @Override
-    public void deleteTrainee(Long id) {
-        log.info("Deleting trainee profile. id={}", id);
-        traineeRepository.delete(id);
-        log.info("Trainee profile deleted. id={}", id);
+    public TraineeDto updateTrainerList(TraineeTrainerListUpdateDto dto) {
+        EntityTransaction transaction = entityManager.getTransaction();
+        try {
+            transaction.begin();
+            if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
+                Trainee trainee = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
+                    log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
+                    return new IllegalArgumentException("Trainee does not exist");
+                });
+                List<Trainer> trainers = trainerRepository.getByUsernames(dto.getTrainerUsernames());
+
+                trainee.setTrainers(trainers);
+                transaction.commit();
+
+                return TraineeMapper.INSTANCE.mapToFullDto(trainee);
+            }
+
+            throw new IllegalArgumentException("Incorrect Credentials");
+        } catch (Exception e){
+            if(transaction.isActive()){
+                transaction.rollback();
+            }
+            throw e;
+        }
     }
 
     @Override
-    public void deleteTraineeByUsername(String username) {
-        log.info("Deleting trainee profile. username={}", username);
-        traineeRepository.deleteByUsername(username);
+    public void deleteTrainee(DeleteRequestDto dto) {
+        log.info("Deleting trainee profile. id={}", dto.getId());
+        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
+            traineeRepository.delete(dto.getId());
+            log.info("Trainee profile deleted. id={}", dto.getId());
+            return;
+        }
+
+        throw new IllegalArgumentException("Incorrect Credentials");
+
+    }
+
+    @Override
+    public void deleteTraineeByUsername(DeleteRequestDto dto) {
+        log.info("Deleting trainee profile. username={}", dto.getUsername());
+        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
+            traineeRepository.deleteByUsername(dto.getUsername());
+
+            log.info("Trainee profile deleted. username={}", dto.getUsername());
+            return;
+        }
+
+        throw new IllegalArgumentException("Incorrect Credentials");
     }
 
     @Override
@@ -96,17 +158,41 @@ public class TraineeServiceImpl implements TraineeService {
             return new IllegalArgumentException("Trainee does not exist");
         });
 
-        return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
+        return TraineeMapper.INSTANCE.mapToFullDto(trainee);
     }
 
     @Override
-    public TraineeDto getTraineeByUsername(String username) {
-        log.info("Getting trainee profile. username={}", username);
-        Trainee trainee = traineeRepository.getByUsername(username).orElseThrow(()->{
-            log.warn("Trainee profile not found. username={}", username);
-            return new IllegalArgumentException("Trainee does not exist");
-        });
+    public TraineeDto getTraineeByUsername(AuthenticationRequestDto dto) {
+        log.info("Getting trainee profile. username={}", dto.getUsername());
+        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
+            Trainee trainee = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
+                log.warn("Trainee profile not found. username={}", dto.getUsername());
+                return new IllegalArgumentException("Trainee does not exist");
+            });
 
-        return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
+            return TraineeMapper.INSTANCE.mapToFullDto(trainee);
+        }
+
+        throw new IllegalArgumentException("Incorrect Credentials");
+    }
+
+    @Override
+    public List<TrainingDto> searchTrainings(TraineeTrainingsSearchCriteria criteria) {
+        if (userService.isAuthenticated(criteria.getUsername(), criteria.getPassword())) {
+            return TrainingMapper.INSTANCE.mapToDtoList(traineeRepository.getTrainingsByCriteria(criteria));
+        }
+
+        throw new IllegalArgumentException("Incorrect Credentials");
+    }
+
+    @Override
+    public TraineeDto changeIsActiveStatus(AuthenticationRequestDto auth) {
+        log.info("Changing active status for: username = {}", auth.getUsername());
+        if (userService.isAuthenticated(auth.getUsername(), auth.getPassword())) {
+            Trainee trainee = traineeRepository.changeIsActiveStatus(auth.getUsername());
+            return TraineeMapper.INSTANCE.mapToFullDto(trainee);
+        }
+
+        throw new IllegalArgumentException("Incorrect Credentials");
     }
 }

@@ -41,32 +41,6 @@ public class TrainingTypeRepositoryImpl implements TrainingTypeRepository {
     }
 
     @Override
-    public TrainingType update(TrainingType trainingType) {
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-
-            if (trainingType.getId() == null) {
-                throw new IllegalArgumentException("Training id must not be null");
-            }
-            if (entityManager.find(TrainingType.class, trainingType.getId()) == null) {
-                log.warn("Cannot update trainingType. Not found in storage. id={}", trainingType.getId());
-                throw new IllegalArgumentException("TrainingType does not exist");
-            }
-            TrainingType updatedTrainingType = entityManager.merge(trainingType);
-            transaction.commit();
-            log.debug("Updated trainingType in database. id={}", updatedTrainingType.getId());
-            return updatedTrainingType;
-        } catch (Exception e) {
-            if (transaction.isActive()) {
-                transaction.rollback();
-            }
-            throw e;
-        }
-    }
-
-    @Override
     public void delete(Long id) {
         EntityTransaction transaction = entityManager.getTransaction();
 

@@ -1,21 +1,19 @@
 package com.epam.gymapp.dto.trainee;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
-public class TraineeUpdateDto {
+public class TraineeTrainerListUpdateDto {
     @NotBlank
     private String username;
     @NotBlank
     private String password;
-    private String firstName;
-    private String lastName;
-    private Boolean isActive;
-    private LocalDate dateOfBirth;
-    private String address;
+    @NotEmpty
+    private List<String> trainerUsernames;
 }

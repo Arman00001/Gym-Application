@@ -1,5 +1,6 @@
 package com.epam.gymapp.service.user;
 
+import com.epam.gymapp.dto.user.ChangePasswordRequestDto;
 import com.epam.gymapp.dto.user.UserCreateDto;
 import com.epam.gymapp.dto.user.UserUpdateDto;
 import com.epam.gymapp.mapper.UserMapper;
@@ -82,6 +83,20 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getById(Long id) {
         return userRepository.getById(id).orElseThrow(() -> new NoSuchElementException("User not found"));
+    }
+
+    @Override
+    public boolean isAuthenticated(String username, String password) {
+        return userRepository.isAuthenticated(username, password);
+    }
+
+    @Override
+    public void changePassword(ChangePasswordRequestDto dto) {
+        if(isAuthenticated(dto.getUsername(), dto.getOldPassword())){
+            userRepository.changePassword(dto.getUsername(),dto.getNewPassword());
+        }
+
+        throw new IllegalArgumentException("Incorrect Credentials");
     }
 
     private String generateUsername(String firstName, String lastName) {

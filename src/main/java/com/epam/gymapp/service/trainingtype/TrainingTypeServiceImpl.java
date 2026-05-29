@@ -3,7 +3,6 @@ package com.epam.gymapp.service.trainingtype;
 import com.epam.gymapp.dto.trainingtype.TrainingTypeCreateDto;
 import com.epam.gymapp.dto.trainingtype.TrainingTypeCreateResponse;
 import com.epam.gymapp.dto.trainingtype.TrainingTypeDto;
-import com.epam.gymapp.dto.trainingtype.TrainingTypeUpdateDto;
 import com.epam.gymapp.mapper.TrainingTypeMapper;
 import com.epam.gymapp.persistence.entity.TrainingType;
 import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
@@ -33,25 +32,6 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
         log.info("Training type created successfully. name={}", result.getName());
 
         return TrainingTypeMapper.INSTANCE.mapToCreateResponse(result);
-    }
-
-    @Override
-    public TrainingTypeDto updateTrainee(TrainingTypeUpdateDto trainingTypeUpdateDto) {
-        log.info("Updating training type. name={}", trainingTypeUpdateDto.getPreviousName());
-
-        TrainingType existing = trainingTypeRepository.getByName(trainingTypeUpdateDto.getPreviousName())
-                .orElseThrow(() -> {
-                    log.warn("Cannot update training type. Not found. name={}", trainingTypeUpdateDto.getPreviousName());
-                    return new IllegalArgumentException("TrainingType does not exist");
-
-                });
-
-        existing.setName(trainingTypeUpdateDto.getNewName());
-        TrainingType updated = trainingTypeRepository.update(existing);
-
-        log.info("Training type updated successfully. name={}", updated.getName());
-
-        return TrainingTypeMapper.INSTANCE.mapToDto(updated);
     }
 
     @Override
