@@ -11,6 +11,7 @@ import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
+import com.epam.gymapp.persistence.repository.trainee_trainer.TraineeTrainerRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.service.user.UserService;
 import jakarta.persistence.EntityManager;
@@ -29,6 +30,7 @@ public class TraineeServiceImpl implements TraineeService {
     private TraineeRepository traineeRepository;
     private UserService userService;
     private TrainerRepository trainerRepository;
+    private TraineeTrainerRepository traineeTrainerRepository;
     private EntityManager entityManager;
 
     @Autowired
@@ -39,6 +41,11 @@ public class TraineeServiceImpl implements TraineeService {
     @Autowired
     public void setTrainerRepository(TrainerRepository trainerRepository) {
         this.trainerRepository = trainerRepository;
+    }
+
+    @Autowired
+    public void setTraineeTrainerRepository(TraineeTrainerRepository traineeTrainerRepository) {
+        this.traineeTrainerRepository = traineeTrainerRepository;
     }
 
     @Autowired
@@ -87,10 +94,12 @@ public class TraineeServiceImpl implements TraineeService {
             existing.setAddress(dto.getAddress());
 
             Trainee updated = traineeRepository.update(existing);
+            List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(updated.getUser().getUsername());
+
 
             log.info("Trainee profile updated successfully. username={}", user.getUsername());
 
-            return TraineeMapper.INSTANCE.mapToFullDto(updated);
+            return TraineeMapper.INSTANCE.mapToFullDto(updated, trainers);
         }
 
         throw new IllegalArgumentException("Incorrect Credentials");
@@ -107,11 +116,10 @@ public class TraineeServiceImpl implements TraineeService {
                     return new IllegalArgumentException("Trainee does not exist");
                 });
                 List<Trainer> trainers = trainerRepository.getByUsernames(dto.getTrainerUsernames());
-
-                trainee.setTrainers(trainers);
+                traineeTrainerRepository.updateTrainerList(trainee, trainers);
                 transaction.commit();
 
-                return TraineeMapper.INSTANCE.mapToFullDto(trainee);
+                return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
             }
 
             throw new IllegalArgumentException("Incorrect Credentials");
@@ -157,8 +165,10 @@ public class TraineeServiceImpl implements TraineeService {
             log.warn("Trainee profile not found. id={}", id);
             return new IllegalArgumentException("Trainee does not exist");
         });
+        List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(trainee.getUser().getUsername());
 
-        return TraineeMapper.INSTANCE.mapToFullDto(trainee);
+
+        return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
     }
 
     @Override
@@ -169,8 +179,9 @@ public class TraineeServiceImpl implements TraineeService {
                 log.warn("Trainee profile not found. username={}", dto.getUsername());
                 return new IllegalArgumentException("Trainee does not exist");
             });
+            List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(trainee.getUser().getUsername());
 
-            return TraineeMapper.INSTANCE.mapToFullDto(trainee);
+            return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
         }
 
         throw new IllegalArgumentException("Incorrect Credentials");
@@ -190,7 +201,7 @@ public class TraineeServiceImpl implements TraineeService {
         log.info("Changing active status for: username = {}", auth.getUsername());
         if (userService.isAuthenticated(auth.getUsername(), auth.getPassword())) {
             Trainee trainee = traineeRepository.changeIsActiveStatus(auth.getUsername());
-            return TraineeMapper.INSTANCE.mapToFullDto(trainee);
+            return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
         }
 
         throw new IllegalArgumentException("Incorrect Credentials");

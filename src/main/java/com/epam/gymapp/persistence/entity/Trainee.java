@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
@@ -27,11 +25,4 @@ public class Trainee {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "trainee_trainers",
-            joinColumns = @JoinColumn(name = "trainee_id"),
-            inverseJoinColumns = @JoinColumn(name = "trainer_id")
-    )
-    private List<Trainer> trainers = new ArrayList<>();
 }

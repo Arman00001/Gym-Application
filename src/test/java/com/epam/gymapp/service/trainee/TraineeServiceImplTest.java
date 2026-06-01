@@ -7,6 +7,7 @@ import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.dto.user.UserCreateDto;
 import com.epam.gymapp.persistence.entity.*;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
+import com.epam.gymapp.persistence.repository.trainee_trainer.TraineeTrainerRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.service.user.UserService;
 import jakarta.persistence.EntityManager;
@@ -38,6 +39,9 @@ class TraineeServiceImplTest {
 
     @Mock
     private TrainerRepository trainerRepository;
+
+    @Mock
+    private TraineeTrainerRepository traineeTrainerRepository;
 
     @Mock
     private EntityManager entityManager;
@@ -267,7 +271,9 @@ class TraineeServiceImplTest {
         TraineeDto result = traineeService.updateTrainerList(dto);
 
         assertThat(result.getFirstName()).isEqualTo("John");
-        assertThat(trainee.getTrainers()).containsExactly(trainerOne, trainerTwo);
+        assertThat(result.getTrainers()).extracting(TraineeTrainerDto::getUsername)
+                .containsExactly("Alex.Brown", "Emma.Wilson");
+        verify(traineeTrainerRepository).updateTrainerList(trainee, List.of(trainerOne, trainerTwo));
         verify(transaction).begin();
         verify(transaction).commit();
         verify(transaction, never()).rollback();
@@ -291,7 +297,7 @@ class TraineeServiceImplTest {
         verify(transaction).begin();
         verify(transaction).rollback();
         verify(transaction, never()).commit();
-        verifyNoInteractions(trainerRepository);
+        verifyNoInteractions(trainerRepository, traineeTrainerRepository);
     }
 
     private static AuthenticationRequestDto auth(String username, String password) {

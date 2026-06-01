@@ -113,14 +113,13 @@ public class TrainerRepositoryImpl implements TrainerRepository {
     @Override
     public List<Training> getTrainingsByCriteria(TrainerTrainingsSearchCriteria criteria) {
         return entityManager
-                .createQuery("SELECT trainings " +
-                        "FROM Trainer t " +
-                        "JOIN t.trainings trainings " +
-                        "WHERE t.user.username = :username " +
-                        "AND (:firstName IS NULL OR LOWER(trainings.trainee.user.firstName) LIKE LOWER(CONCAT('%',:firstName,'%'))) " +
-                        "AND (:lastName IS NULL OR LOWER(trainings.trainee.user.lastName) LIKE LOWER(CONCAT('%',:lastName,'%'))) " +
-                        "AND (:fromDate IS NULL OR trainings.date >= :fromDate) " +
-                        "AND (:toDate IS NULL OR trainings.date <= :toDate)", Training.class)
+                .createQuery("SELECT training " +
+                        "FROM Training training " +
+                        "WHERE training.trainer.user.username = :username " +
+                        "AND (:firstName IS NULL OR LOWER(training.trainee.user.firstName) LIKE LOWER(CONCAT('%',:firstName,'%'))) " +
+                        "AND (:lastName IS NULL OR LOWER(training.trainee.user.lastName) LIKE LOWER(CONCAT('%',:lastName,'%'))) " +
+                        "AND (:fromDate IS NULL OR training.date >= :fromDate) " +
+                        "AND (:toDate IS NULL OR training.date <= :toDate)", Training.class)
                 .setParameter("username", criteria.getUsername())
                 .setParameter("firstName", criteria.getTraineeFirstName())
                 .setParameter("lastName", criteria.getTraineeLastName())
@@ -135,10 +134,20 @@ public class TrainerRepositoryImpl implements TrainerRepository {
         return entityManager
                 .createQuery("SELECT t FROM Trainer t " +
                         "WHERE t.id NOT IN (" +
-                            "SELECT assignedTrainer.id FROM Trainee t JOIN t.trainers assignedTrainer " +
+                            "SELECT assignedTrainer.id FROM TraineeTrainer tt JOIN tt.trainer assignedTrainer " +
                             "WHERE t.user.username = :username" +
                         ")", Trainer.class)
                 .setParameter("username",username)
+                .getResultList();
+    }
+
+    @Override
+    public List<Trainer> getAllByTraineeUsername(String traineeUsername) {
+        return entityManager
+                .createQuery("SELECT DISTINCT tt.trainer " +
+                        "FROM TraineeTrainer tt " +
+                        "WHERE tt.trainee.user.username = :traineeUsername", Trainer.class)
+                .setParameter("traineeUsername", traineeUsername)
                 .getResultList();
     }
 

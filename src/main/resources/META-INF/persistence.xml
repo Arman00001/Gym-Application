@@ -11,6 +11,7 @@
         <class>com.epam.gymapp.persistence.entity.Trainer</class>
         <class>com.epam.gymapp.persistence.entity.Training</class>
         <class>com.epam.gymapp.persistence.entity.TrainingType</class>
+        <class>com.epam.gymapp.persistence.entity.TraineeTrainer</class>
 
         <properties>
             <property name="hibernate.jdbc.time_zone" value="UTC+4"/>

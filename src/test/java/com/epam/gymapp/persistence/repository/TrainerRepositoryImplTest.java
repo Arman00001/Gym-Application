@@ -132,6 +132,38 @@ class TrainerRepositoryImplTest {
         assertThat(trainerRepository.getAll()).containsExactlyElementsOf(trainers);
     }
 
+    @Test
+    void getNotAssignedToTrainee_shouldUseTraineeTrainerAssignments() {
+        List<Trainer> trainers = List.of(
+                trainer(1L, user(10L, "Alex.Brown"), trainingType(5L, "Yoga")),
+                trainer(2L, user(20L, "Bob.Green"), trainingType(6L, "Fitness"))
+        );
+        when(entityManager.createQuery(anyString(), eq(Trainer.class))).thenReturn(trainerQuery);
+        when(trainerQuery.setParameter("username", "John.Smith")).thenReturn(trainerQuery);
+        when(trainerQuery.getResultList()).thenReturn(trainers);
+
+        assertThat(trainerRepository.getNotAssignedToTrainee("John.Smith")).containsExactlyElementsOf(trainers);
+
+        verify(entityManager).createQuery(contains("TraineeTrainer"), eq(Trainer.class));
+        verify(trainerQuery).setParameter("username", "John.Smith");
+    }
+
+    @Test
+    void getAllByTraineeUsername_shouldReturnAssignedTrainersFromTraineeTrainer() {
+        List<Trainer> trainers = List.of(
+                trainer(1L, user(10L, "Alex.Brown"), trainingType(5L, "Yoga")),
+                trainer(2L, user(20L, "Bob.Green"), trainingType(6L, "Fitness"))
+        );
+        when(entityManager.createQuery(anyString(), eq(Trainer.class))).thenReturn(trainerQuery);
+        when(trainerQuery.setParameter("traineeUsername", "John.Smith")).thenReturn(trainerQuery);
+        when(trainerQuery.getResultList()).thenReturn(trainers);
+
+        assertThat(trainerRepository.getAllByTraineeUsername("John.Smith")).containsExactlyElementsOf(trainers);
+
+        verify(entityManager).createQuery(contains("FROM TraineeTrainer tt"), eq(Trainer.class));
+        verify(trainerQuery).setParameter("traineeUsername", "John.Smith");
+    }
+
     private static Trainer trainer(Long id, User user, TrainingType specialization) {
         Trainer trainer = new Trainer();
         trainer.setId(id);

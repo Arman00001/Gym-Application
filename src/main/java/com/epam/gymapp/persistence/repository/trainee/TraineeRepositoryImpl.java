@@ -183,9 +183,8 @@ public class TraineeRepositoryImpl implements TraineeRepository {
     public List<Training> getTrainingsByCriteria(TraineeTrainingsSearchCriteria criteria) {
         return entityManager
                 .createQuery("SELECT trainings " +
-                        "FROM Trainee t " +
-                        "JOIN t.trainings trainings " +
-                        "WHERE t.user.username = :username " +
+                        "FROM Training trainings " +
+                        "WHERE trainings.trainee.user.username = :username " +
                         "AND (:firstName IS NULL OR LOWER(trainings.trainer.user.firstName) LIKE LOWER(CONCAT('%',:firstName,'%'))) " +
                         "AND (:lastName IS NULL OR LOWER(trainings.trainer.user.lastName) LIKE LOWER(CONCAT('%',:lastName,'%'))) " +
                         "AND (:trainingType IS NULL OR LOWER(trainings.type.name) LIKE LOWER(CONCAT('%',:trainingType,'%'))) " +
@@ -197,6 +196,16 @@ public class TraineeRepositoryImpl implements TraineeRepository {
                 .setParameter("trainingType", criteria.getTrainingType())
                 .setParameter("fromDate", criteria.getFromDate())
                 .setParameter("toDate", criteria.getToDate())
+                .getResultList();
+    }
+
+    @Override
+    public List<Trainee> getAllByTrainerUsername(String trainerUsername) {
+        return entityManager
+                .createQuery("SELECT DISTINCT tt.trainee " +
+                        "FROM TraineeTrainer tt " +
+                        "WHERE tt.trainer.user.username = :trainerUsername", Trainee.class)
+                .setParameter("trainerUsername", trainerUsername)
                 .getResultList();
     }
 

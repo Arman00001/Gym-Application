@@ -1,6 +1,7 @@
 package com.epam.gymapp.mapper;
 
 import com.epam.gymapp.dto.trainer.*;
+import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.TrainingType;
 import com.epam.gymapp.persistence.entity.User;
@@ -36,11 +37,11 @@ public interface TrainerMapper {
                 .toList();
     };
 
-    default TrainerDto mapToFullDto(Trainer trainer){
+    default TrainerDto mapToFullDto(Trainer trainer, List<Trainee> trainees){
         TrainerDto trainerDto = mapToDto(trainer,trainer.getUser(), trainer.getSpecialization());
 
         trainerDto.setTrainees(
-                trainer.getTrainees().stream().map(trainee -> {
+                trainees.stream().map(trainee -> {
                     TrainerTraineeDto dto = new TrainerTraineeDto();
                     dto.setFirstName(trainee.getUser().getFirstName());
                     dto.setLastName(trainee.getUser().getLastName());

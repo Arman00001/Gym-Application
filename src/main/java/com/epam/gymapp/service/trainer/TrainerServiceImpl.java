@@ -6,9 +6,11 @@ import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.mapper.TrainerMapper;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.mapper.UserMapper;
+import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.TrainingType;
 import com.epam.gymapp.persistence.entity.User;
+import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
 import com.epam.gymapp.service.user.UserService;
@@ -24,6 +26,7 @@ public class TrainerServiceImpl implements TrainerService {
     private static final Logger log = LoggerFactory.getLogger(TrainerServiceImpl.class);
 
     private TrainerRepository trainerRepository;
+    private TraineeRepository traineeRepository;
     private UserService userService;
     private TrainingTypeRepository trainingTypeRepository;
 
@@ -87,10 +90,11 @@ public class TrainerServiceImpl implements TrainerService {
             existing.setSpecialization(specialization);
 
             Trainer updatedTrainer = trainerRepository.update(existing);
+            List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(user.getUsername());
 
             log.info("Trainer profile updated successfully. username={}", user.getUsername());
 
-            return TrainerMapper.INSTANCE.mapToFullDto(updatedTrainer);
+            return TrainerMapper.INSTANCE.mapToFullDto(updatedTrainer, trainees);
         }
 
         throw new IllegalArgumentException("Incorrect Credentials");
@@ -104,20 +108,23 @@ public class TrainerServiceImpl implements TrainerService {
             log.warn("Trainer profile not found. id={}", id);
             return new IllegalArgumentException("Trainer does not exist");
         });
+        List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(trainer.getUser().getUsername());
 
-        return TrainerMapper.INSTANCE.mapToFullDto(trainer);
+        return TrainerMapper.INSTANCE.mapToFullDto(trainer, trainees);
     }
 
     @Override
     public TrainerDto getTrainerByUsername(AuthenticationRequestDto dto) {
         log.info("Getting trainer profile. username={}", dto.getUsername());
-        if(userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
+        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
             Trainer trainer = trainerRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
                 log.warn("Trainer profile not found. username={}", dto.getUsername());
                 return new IllegalArgumentException("Trainer does not exist");
             });
 
-            return TrainerMapper.INSTANCE.mapToFullDto(trainer);
+            List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(trainer.getUser().getUsername());
+
+            return TrainerMapper.INSTANCE.mapToFullDto(trainer, trainees);
         }
 
         throw new IllegalArgumentException("Incorrect Credentials");
@@ -133,7 +140,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     public List<TrainingDto> searchTrainings(TrainerTrainingsSearchCriteria criteria) {
-        if(userService.isAuthenticated(criteria.getUsername(), criteria.getPassword())) {
+        if (userService.isAuthenticated(criteria.getUsername(), criteria.getPassword())) {
             return TrainingMapper.INSTANCE.mapToDtoList(trainerRepository.getTrainingsByCriteria(criteria));
         }
 
@@ -145,7 +152,7 @@ public class TrainerServiceImpl implements TrainerService {
         log.info("Changing active status for: username = {}", auth.getUsername());
         if (userService.isAuthenticated(auth.getUsername(), auth.getPassword())) {
             Trainer trainer = trainerRepository.changeIsActiveStatus(auth.getUsername());
-            return TrainerMapper.INSTANCE.mapToFullDto(trainer);
+            return TrainerMapper.INSTANCE.mapToDto(trainer, trainer.getUser(), trainer.getSpecialization());
         }
         throw new IllegalArgumentException("Incorrect Credentials");
     }

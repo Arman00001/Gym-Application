@@ -21,6 +21,7 @@ public interface TrainerRepository {
     List<Trainer> getByUsernames(List<String> trainerUsernames);
     List<Training> getTrainingsByCriteria(TrainerTrainingsSearchCriteria criteria);
     List<Trainer> getNotAssignedToTrainee(String username);
+    List<Trainer> getAllByTraineeUsername(String traineeUsername);
 
     Trainer changeIsActiveStatus(String username);
 

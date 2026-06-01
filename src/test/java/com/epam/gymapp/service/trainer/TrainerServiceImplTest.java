@@ -8,6 +8,7 @@ import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
 import com.epam.gymapp.persistence.entity.TrainingType;
 import com.epam.gymapp.persistence.entity.User;
+import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
 import com.epam.gymapp.service.user.UserService;
@@ -32,6 +33,9 @@ class TrainerServiceImplTest {
 
     @Mock
     private TrainerRepository trainerRepository;
+
+    @Mock
+    private TraineeRepository traineeRepository;
 
     @Mock
     private TrainingTypeRepository trainingTypeRepository;

@@ -21,6 +21,7 @@ public interface TraineeRepository {
     Optional<Trainee> get(Long id);
     Optional<Trainee> getByUsername(String username);
     List<Training> getTrainingsByCriteria(TraineeTrainingsSearchCriteria criteria);
+    List<Trainee> getAllByTrainerUsername(String trainerUsername);
 
     Trainee changeIsActiveStatus(String username);
 
