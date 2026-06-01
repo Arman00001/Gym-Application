@@ -5,12 +5,14 @@ import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.trainee.TraineeCreateDto;
 import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
 import com.epam.gymapp.dto.trainee.TraineeDto;
+import com.epam.gymapp.dto.trainee.TraineeTrainerListUpdateDto;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Configuration
 @ComponentScan(basePackages = "com.epam.gymapp")
@@ -40,6 +42,12 @@ public class GymApplication {
             auth.setPassword(response.getPassword());
 
             TraineeDto created = facade.getTrainee(auth);
+            TraineeTrainerListUpdateDto traineeTrainerListUpdateDto =
+                    new TraineeTrainerListUpdateDto();
+            traineeTrainerListUpdateDto.setUsername(response.getUsername());
+            traineeTrainerListUpdateDto.setPassword(response.getPassword());
+            traineeTrainerListUpdateDto.setTrainerUsernames(List.of("Alex.Johnson","Emma.Wilson"));
+            facade.updateTraineeTrainers(traineeTrainerListUpdateDto);
             System.out.println("Fetched created trainee: " + created.getFirstName());
         }
     }
