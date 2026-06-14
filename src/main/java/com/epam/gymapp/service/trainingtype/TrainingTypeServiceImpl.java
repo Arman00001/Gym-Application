@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class TrainingTypeServiceImpl implements TrainingTypeService {
     private static final Logger log = LoggerFactory.getLogger(TrainingTypeServiceImpl.class);
@@ -39,6 +41,12 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
         log.info("Deleting training type. id={}", id);
         trainingTypeRepository.delete(id);
         log.info("Training type deleted. id={}", id);
+    }
+
+    @Override
+    public List<TrainingTypeDto> getAll() {
+        log.info("Retrieving all training types");
+        return TrainingTypeMapper.INSTANCE.mapToDtoList(trainingTypeRepository.getAll());
     }
 
     @Override
