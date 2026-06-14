@@ -13,6 +13,12 @@ dependencies {
     implementation("org.springframework:spring-context:7.0.7")
     implementation("jakarta.annotation:jakarta.annotation-api:3.0.0")
 
+    implementation("org.springframework:spring-web:7.0.7")
+    implementation("org.springframework:spring-webmvc:7.0.7")
+    implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
+
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+
     implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
     implementation("jakarta.validation:jakarta.validation-api:3.1.1")
 
