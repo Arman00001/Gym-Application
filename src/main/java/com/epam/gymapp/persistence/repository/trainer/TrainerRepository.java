@@ -3,8 +3,6 @@ package com.epam.gymapp.persistence.repository.trainer;
 import com.epam.gymapp.dto.trainer.TrainerTrainingsSearchCriteria;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 
 import java.util.List;
 import java.util.Optional;

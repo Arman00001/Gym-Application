@@ -135,7 +135,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
                 .createQuery("SELECT t FROM Trainer t " +
                         "WHERE t.id NOT IN (" +
                             "SELECT assignedTrainer.id FROM TraineeTrainer tt JOIN tt.trainer assignedTrainer " +
-                            "WHERE t.user.username = :username" +
+                            "WHERE t.user.username = :username AND t.user.isActive = true" +
                         ")", Trainer.class)
                 .setParameter("username",username)
                 .getResultList();
