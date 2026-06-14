@@ -99,6 +99,11 @@ public class UserServiceImpl implements UserService {
         throw new IllegalArgumentException("Incorrect Credentials");
     }
 
+    @Override
+    public boolean login(String username, String password) {
+        return userRepository.login(username, password);
+    }
+
     private String generateUsername(String firstName, String lastName) {
         String baseUsername = firstName + "." + lastName;
 

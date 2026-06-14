@@ -1,5 +1,6 @@
 package com.epam.gymapp.service.user;
 
+import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.user.UserCreateDto;
 import com.epam.gymapp.dto.user.UserUpdateDto;
 import com.epam.gymapp.dto.user.ChangePasswordRequestDto;
@@ -14,4 +15,5 @@ public interface UserService {
     User getById(Long id);
     boolean isAuthenticated(String username, String password);
     void changePassword(ChangePasswordRequestDto dto);
+    boolean login(String username, String password);
 }

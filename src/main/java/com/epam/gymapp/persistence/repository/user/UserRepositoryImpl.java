@@ -145,6 +145,15 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public boolean login(String username, String password) {
+        return entityManager
+                .createQuery("SELECT u FROM User u WHERE u.username = :username AND u.password = :password", User.class)
+                .setParameter("username",username)
+                .setParameter("password",password)
+                .getSingleResultOrNull() != null;
+    }
+
+    @Override
     public void changePassword(String username, String newPassword) {
         User user = entityManager
                 .createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)

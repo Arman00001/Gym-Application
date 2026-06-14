@@ -16,6 +16,8 @@ public interface UserRepository {
 
     boolean existsByUsername(String username);
     boolean isAuthenticated(String username, String password);
+    boolean login(String username, String password);
 
     void changePassword(String username, String newPassword);
+
 }
