@@ -36,8 +36,13 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Autowired
-    public void setTrainingTypeRepositoryImpl(TrainingTypeRepository trainingTypeRepository) {
+    public void setTrainingTypeRepository(TrainingTypeRepository trainingTypeRepository) {
         this.trainingTypeRepository = trainingTypeRepository;
+    }
+
+    @Autowired
+    public void setTraineeRepository(TraineeRepository traineeRepository){
+        this.traineeRepository = traineeRepository;
     }
 
     @Autowired

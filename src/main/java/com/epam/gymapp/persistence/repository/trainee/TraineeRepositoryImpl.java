@@ -185,9 +185,9 @@ public class TraineeRepositoryImpl implements TraineeRepository {
                 .createQuery("SELECT trainings " +
                         "FROM Training trainings " +
                         "WHERE trainings.trainee.user.username = :username " +
-                        "AND (:firstName IS NULL OR LOWER(trainings.trainer.user.firstName) LIKE LOWER(CONCAT('%',:firstName,'%'))) " +
-                        "AND (:lastName IS NULL OR LOWER(trainings.trainer.user.lastName) LIKE LOWER(CONCAT('%',:lastName,'%'))) " +
-                        "AND (:trainingType IS NULL OR LOWER(trainings.type.name) LIKE LOWER(CONCAT('%',:trainingType,'%'))) " +
+                        "AND (:firstName IS NULL OR LOWER(trainings.trainer.user.firstName) LIKE LOWER(CONCAT('%',CAST(:firstName AS string),'%'))) " +
+                        "AND (:lastName IS NULL OR LOWER(trainings.trainer.user.lastName) LIKE LOWER(CONCAT('%',CAST(:lastName AS string),'%'))) " +
+                        "AND (:trainingType IS NULL OR LOWER(trainings.type.name) LIKE LOWER(CONCAT('%',CAST(:trainingType AS string),'%'))) " +
                         "AND (:fromDate IS NULL OR trainings.date >= :fromDate) " +
                         "AND (:toDate IS NULL OR trainings.date <= :toDate)", Training.class)
                 .setParameter("username", criteria.getUsername())
