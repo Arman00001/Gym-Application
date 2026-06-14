@@ -1,5 +1,6 @@
 package com.epam.gymapp;
 
+import com.epam.gymapp.configuration.AppConfig;
 import com.epam.gymapp.configuration.RepoConfig;
 import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.trainee.TraineeCreateDto;
@@ -7,21 +8,15 @@ import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
 import com.epam.gymapp.dto.trainee.TraineeDto;
 import com.epam.gymapp.dto.trainee.TraineeTrainerListUpdateDto;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
 
 import java.time.LocalDate;
 import java.util.List;
 
-@Configuration
-@ComponentScan(basePackages = "com.epam.gymapp")
-@PropertySource("classpath:application.properties")
 public class GymApplication {
 
     public static void main(String[] args) {
         try (AnnotationConfigApplicationContext context =
-                     new AnnotationConfigApplicationContext(GymApplication.class, RepoConfig.class)) {
+                     new AnnotationConfigApplicationContext(AppConfig.class, RepoConfig.class)) {
 
             GymFacade facade = context.getBean(GymFacade.class);
 
