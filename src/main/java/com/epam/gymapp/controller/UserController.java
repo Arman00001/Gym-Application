@@ -12,7 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(value = "/users", consumes = {"application/JSON"}, produces = {"application/JSON"})
+@RequestMapping(value = "/users", produces = {"application/JSON"})
 @Tag(name = "Users", description = "Operations for logging in the user, changing credentials in the application")
 @RequiredArgsConstructor
 public class UserController {
