@@ -18,6 +18,10 @@ dependencies {
     implementation("jakarta.servlet:jakarta.servlet-api:6.1.0")
 
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
+    implementation("org.springframework.boot:spring-boot:4.0.0")
+    implementation("org.springframework.boot:spring-boot-autoconfigure:4.0.0")
+
+    implementation("org.apache.tomcat.embed:tomcat-embed-core:11.0.22")
 
     implementation("jakarta.persistence:jakarta.persistence-api:3.2.0")
     implementation("jakarta.validation:jakarta.validation-api:3.1.1")
