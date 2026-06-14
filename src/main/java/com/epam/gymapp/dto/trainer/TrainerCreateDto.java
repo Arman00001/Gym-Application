@@ -7,10 +7,10 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TrainerCreateDto {
-    @NotBlank
+    @NotBlank(message = "first name should not be blank")
     private String firstName;
-    @NotBlank
+    @NotBlank(message = "last name should not be blank")
     private String lastName;
-    @NotBlank
+    @NotBlank(message = "specialization should not be blank")
     private String specialization;
 }
