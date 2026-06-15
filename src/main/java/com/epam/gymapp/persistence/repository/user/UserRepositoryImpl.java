@@ -1,5 +1,6 @@
 package com.epam.gymapp.persistence.repository.user;
 
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
@@ -51,7 +52,7 @@ public class UserRepositoryImpl implements UserRepository {
             }
             if (entityManager.find(User.class, user.getId()) == null) {
                 log.warn("Cannot update user. Not found. id={}", user.getId());
-                throw new IllegalArgumentException("User does not exist");
+                throw new ResourceNotFoundException("User does not exist");
             }
             User updatedUser = entityManager.merge(user);
             transaction.commit();
@@ -75,7 +76,7 @@ public class UserRepositoryImpl implements UserRepository {
             User user = entityManager.find(User.class, id);
             if (user == null) {
                 log.warn("Cannot delete user. Not found. id={}", id);
-                throw new IllegalArgumentException("User does not exist");
+                throw new ResourceNotFoundException("User does not exist");
             }
 
             entityManager.remove(user);
@@ -102,7 +103,7 @@ public class UserRepositoryImpl implements UserRepository {
             User managedUser = entityManager.find(User.class, user.getId());
             if (managedUser == null) {
                 log.warn("Cannot delete user. Not found. id={}", user.getId());
-                throw new IllegalArgumentException("User does not exist");
+                throw new ResourceNotFoundException("User does not exist");
             }
 
             entityManager.remove(user);

@@ -3,6 +3,7 @@ package com.epam.gymapp.service.trainingtype;
 import com.epam.gymapp.dto.trainingtype.TrainingTypeCreateDto;
 import com.epam.gymapp.dto.trainingtype.TrainingTypeCreateResponse;
 import com.epam.gymapp.dto.trainingtype.TrainingTypeDto;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.TrainingTypeMapper;
 import com.epam.gymapp.persistence.entity.TrainingType;
 import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
@@ -55,7 +56,7 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
 
         TrainingType trainingType = trainingTypeRepository.get(id).orElseThrow(() -> {
             log.warn("TrainingType profile not found. id={}", id);
-            return new IllegalArgumentException("TrainingType does not exist");
+            return new ResourceNotFoundException("TrainingType does not exist");
         });
 
         return TrainingTypeMapper.INSTANCE.mapToDto(trainingType);
@@ -66,7 +67,7 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
         log.info("Getting training type. name={}", name);
         TrainingType trainingType = trainingTypeRepository.getByName(name).orElseThrow(()->{
             log.warn("Training type not found. name={}", name);
-            return new IllegalArgumentException("Training type does not exist");
+            return new ResourceNotFoundException("Training type does not exist");
         });
 
         return TrainingTypeMapper.INSTANCE.mapToDto(trainingType);

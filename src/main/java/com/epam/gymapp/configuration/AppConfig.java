@@ -11,7 +11,8 @@ import org.springframework.context.annotation.PropertySource;
         "com.epam.gymapp.service",
         "com.epam.gymapp.persistence",
         "com.epam.gymapp.mapper",
-        "com.epam.gymapp.util"
+        "com.epam.gymapp.util",
+        "com.epam.gymapp.exception"
 })
 @Import(GymFacade.class)
 @PropertySource("classpath:application.properties")

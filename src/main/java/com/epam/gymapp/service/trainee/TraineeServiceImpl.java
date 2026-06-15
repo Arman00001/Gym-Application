@@ -4,6 +4,8 @@ import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.DeleteRequestDto;
 import com.epam.gymapp.dto.trainee.*;
 import com.epam.gymapp.dto.training.TrainingDto;
+import com.epam.gymapp.exception.BadCredentialsException;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.TraineeMapper;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.mapper.UserMapper;
@@ -82,7 +84,7 @@ public class TraineeServiceImpl implements TraineeService {
         if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
             Trainee existing = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
                 log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
-                return new IllegalArgumentException("Trainee does not exist");
+                return new ResourceNotFoundException("Trainee does not exist");
             });
 
             User user = existing.getUser();
@@ -102,7 +104,7 @@ public class TraineeServiceImpl implements TraineeService {
             return TraineeMapper.INSTANCE.mapToFullDto(updated, trainers);
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override
@@ -113,7 +115,7 @@ public class TraineeServiceImpl implements TraineeService {
             if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
                 Trainee trainee = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
                     log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
-                    return new IllegalArgumentException("Trainee does not exist");
+                    return new ResourceNotFoundException("Trainee does not exist");
                 });
                 List<Trainer> trainers = trainerRepository.getByUsernames(dto.getTrainerUsernames());
                 traineeTrainerRepository.updateTrainerList(trainee, trainers);
@@ -122,7 +124,7 @@ public class TraineeServiceImpl implements TraineeService {
                 return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
             }
 
-            throw new IllegalArgumentException("Incorrect Credentials");
+            throw new BadCredentialsException("Incorrect Credentials");
         } catch (Exception e){
             if(transaction.isActive()){
                 transaction.rollback();
@@ -140,7 +142,7 @@ public class TraineeServiceImpl implements TraineeService {
             return;
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
 
     }
 
@@ -154,7 +156,7 @@ public class TraineeServiceImpl implements TraineeService {
             return;
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override
@@ -163,7 +165,7 @@ public class TraineeServiceImpl implements TraineeService {
 
         Trainee trainee = traineeRepository.get(id).orElseThrow(() -> {
             log.warn("Trainee profile not found. id={}", id);
-            return new IllegalArgumentException("Trainee does not exist");
+            return new ResourceNotFoundException("Trainee does not exist");
         });
         List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(trainee.getUser().getUsername());
 
@@ -177,14 +179,14 @@ public class TraineeServiceImpl implements TraineeService {
         if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
             Trainee trainee = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
                 log.warn("Trainee profile not found. username={}", dto.getUsername());
-                return new IllegalArgumentException("Trainee does not exist");
+                return new ResourceNotFoundException("Trainee does not exist");
             });
             List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(trainee.getUser().getUsername());
 
             return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override
@@ -193,7 +195,7 @@ public class TraineeServiceImpl implements TraineeService {
             return TrainingMapper.INSTANCE.mapToDtoList(traineeRepository.getTrainingsByCriteria(criteria));
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override
@@ -204,6 +206,6 @@ public class TraineeServiceImpl implements TraineeService {
             return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 }

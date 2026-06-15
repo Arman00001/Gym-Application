@@ -3,6 +3,8 @@ package com.epam.gymapp.service.trainer;
 import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.trainer.*;
 import com.epam.gymapp.dto.training.TrainingDto;
+import com.epam.gymapp.exception.BadCredentialsException;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.TrainerMapper;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.mapper.UserMapper;
@@ -58,7 +60,7 @@ public class TrainerServiceImpl implements TrainerService {
                 dto.getLastName());
         TrainingType trainingType = trainingTypeRepository.getByName(dto.getSpecialization()).orElseThrow(() -> {
             log.warn("Specialization not found. name={}", dto.getSpecialization());
-            return new IllegalArgumentException("Specialization not found");
+            return new ResourceNotFoundException("Specialization not found");
         });
 
         User user = userService.createUser(UserMapper.INSTANCE.trainerToCreateUser(dto));
@@ -79,7 +81,7 @@ public class TrainerServiceImpl implements TrainerService {
         if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
             Trainer existing = trainerRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
                 log.warn("Cannot update trainer. Trainer not found. username={}", dto.getUsername());
-                return new IllegalArgumentException("Trainer does not exist");
+                return new ResourceNotFoundException("Trainer does not exist");
             });
 
             User user = existing.getUser();
@@ -89,7 +91,7 @@ public class TrainerServiceImpl implements TrainerService {
 
             TrainingType specialization = trainingTypeRepository.getByName(dto.getSpecialization()).orElseThrow(() -> {
                 log.warn("Specialization not found. name={}", dto.getSpecialization());
-                return new IllegalArgumentException("Specialization not found");
+                return new ResourceNotFoundException("Specialization not found");
             });
 
             existing.setSpecialization(specialization);
@@ -102,7 +104,7 @@ public class TrainerServiceImpl implements TrainerService {
             return TrainerMapper.INSTANCE.mapToFullDto(updatedTrainer, trainees);
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override
@@ -111,7 +113,7 @@ public class TrainerServiceImpl implements TrainerService {
 
         Trainer trainer = trainerRepository.get(id).orElseThrow(() -> {
             log.warn("Trainer profile not found. id={}", id);
-            return new IllegalArgumentException("Trainer does not exist");
+            return new ResourceNotFoundException("Trainer does not exist");
         });
         List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(trainer.getUser().getUsername());
 
@@ -124,7 +126,7 @@ public class TrainerServiceImpl implements TrainerService {
         if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
             Trainer trainer = trainerRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
                 log.warn("Trainer profile not found. username={}", dto.getUsername());
-                return new IllegalArgumentException("Trainer does not exist");
+                return new ResourceNotFoundException("Trainer does not exist");
             });
 
             List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(trainer.getUser().getUsername());
@@ -132,7 +134,7 @@ public class TrainerServiceImpl implements TrainerService {
             return TrainerMapper.INSTANCE.mapToFullDto(trainer, trainees);
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override
@@ -149,7 +151,7 @@ public class TrainerServiceImpl implements TrainerService {
             return TrainingMapper.INSTANCE.mapToDtoList(trainerRepository.getTrainingsByCriteria(criteria));
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override
@@ -159,6 +161,6 @@ public class TrainerServiceImpl implements TrainerService {
             Trainer trainer = trainerRepository.changeIsActiveStatus(auth.getUsername());
             return TrainerMapper.INSTANCE.mapToDto(trainer, trainer.getUser(), trainer.getSpecialization());
         }
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 }

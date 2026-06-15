@@ -1,5 +1,6 @@
 package com.epam.gymapp.persistence.repository.trainingtype;
 
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.TrainingType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityTransaction;
@@ -52,7 +53,7 @@ public class TrainingTypeRepositoryImpl implements TrainingTypeRepository {
                 entityManager.remove(trainingType);
             } else {
                 log.warn("Cannot delete trainingType. Not found. id={}", id);
-                throw new IllegalArgumentException("TrainingType does not exist");
+                throw new ResourceNotFoundException("TrainingType does not exist");
             }
             transaction.commit();
 
@@ -78,7 +79,7 @@ public class TrainingTypeRepositoryImpl implements TrainingTypeRepository {
             TrainingType managedTrainingType = entityManager.find(TrainingType.class, trainingType.getId());
             if (managedTrainingType == null) {
                 log.warn("Cannot delete trainingType. Not found. id={}", trainingType.getId());
-                throw new IllegalArgumentException("TrainingType does not exist");
+                throw new ResourceNotFoundException("TrainingType does not exist");
             }
 
             entityManager.remove(managedTrainingType);

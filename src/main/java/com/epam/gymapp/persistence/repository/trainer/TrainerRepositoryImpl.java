@@ -1,6 +1,7 @@
 package com.epam.gymapp.persistence.repository.trainer;
 
 import com.epam.gymapp.dto.trainer.TrainerTrainingsSearchCriteria;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
 import com.epam.gymapp.persistence.entity.User;
@@ -55,7 +56,7 @@ public class TrainerRepositoryImpl implements TrainerRepository {
             }
             if (entityManager.find(Trainer.class, trainer.getId()) == null) {
                 log.warn("Cannot update trainer. Not found in storage. id={}", trainer.getId());
-                throw new IllegalArgumentException("Trainer does not exist");
+                throw new ResourceNotFoundException("Trainer does not exist");
             }
             Trainer updatedTrainer = entityManager.merge(trainer);
             transaction.commit();

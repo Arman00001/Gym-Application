@@ -1,6 +1,7 @@
 package com.epam.gymapp.persistence.repository.trainee;
 
 import com.epam.gymapp.dto.trainee.TraineeTrainingsSearchCriteria;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Training;
 import com.epam.gymapp.persistence.entity.User;
@@ -56,7 +57,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
             }
             if (entityManager.find(Trainee.class, trainee.getId()) == null) {
                 log.warn("Cannot update trainee. Not found in storage. id={}", trainee.getId());
-                throw new IllegalArgumentException("Trainee does not exist");
+                throw new ResourceNotFoundException("Trainee does not exist");
             }
             Trainee updatedTrainee = entityManager.merge(trainee);
 
@@ -84,7 +85,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
                 entityManager.remove(trainee);
             } else {
                 log.warn("Cannot delete trainee. Not found in storage. id={}", id);
-                throw new IllegalArgumentException("Trainee does not exist");
+                throw new ResourceNotFoundException("Trainee does not exist");
             }
 
             transaction.commit();
@@ -111,7 +112,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
                     .executeUpdate();
             if (result == 0) {
                 log.warn("Trainee not found. userId={}", userId);
-                throw new IllegalArgumentException("Trainee does not exist");
+                throw new ResourceNotFoundException("Trainee does not exist");
             }
             transaction.commit();
             log.info("Trainee with userId = {} removed", userId);
@@ -136,7 +137,7 @@ public class TraineeRepositoryImpl implements TraineeRepository {
                     .executeUpdate();
             if (result == 0) {
                 log.warn("Trainee not found. username={}", username);
-                throw new IllegalArgumentException("Trainee does not exist");
+                throw new ResourceNotFoundException("Trainee does not exist");
             }
             transaction.commit();
             log.info("Trainee deleted. username={}", username);

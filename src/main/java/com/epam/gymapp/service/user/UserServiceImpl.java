@@ -3,6 +3,8 @@ package com.epam.gymapp.service.user;
 import com.epam.gymapp.dto.user.ChangePasswordRequestDto;
 import com.epam.gymapp.dto.user.UserCreateDto;
 import com.epam.gymapp.dto.user.UserUpdateDto;
+import com.epam.gymapp.exception.BadCredentialsException;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.UserMapper;
 import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.user.UserRepository;
@@ -11,8 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.NoSuchElementException;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -49,14 +49,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getByUsername(String username) {
         return userRepository.getByUsername(username)
-                .orElseThrow(() -> new IllegalArgumentException("User does not exist"));
+                .orElseThrow(() -> new ResourceNotFoundException("User does not exist"));
     }
 
     @Override
     public User updateUser(UserUpdateDto dto) {
         User user = userRepository.getById(dto.getId()).orElseThrow(() -> {
             log.warn("User not found. username={}", dto.getUsername());
-            return new IllegalArgumentException("User does not exist");
+            return new ResourceNotFoundException("User does not exist");
         });
 
         user.setFirstName(dto.getFirstName());
@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getById(Long id) {
-        return userRepository.getById(id).orElseThrow(() -> new NoSuchElementException("User not found"));
+        return userRepository.getById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @Override
@@ -96,7 +96,7 @@ public class UserServiceImpl implements UserService {
             userRepository.changePassword(dto.getUsername(),dto.getNewPassword());
         }
 
-        throw new IllegalArgumentException("Incorrect Credentials");
+        throw new BadCredentialsException("Incorrect Credentials");
     }
 
     @Override

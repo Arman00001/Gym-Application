@@ -2,6 +2,7 @@ package com.epam.gymapp.service.training;
 
 import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
@@ -43,9 +44,9 @@ public class TrainingServiceImpl implements TrainingService {
                 trainingCreateDto.getTraineeUsername(),
                 trainingCreateDto.getTrainerUsername());
         Trainee trainee = traineeRepository.getByUsername(trainingCreateDto.getTraineeUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Trainee does not exist"));
+                .orElseThrow(() -> new ResourceNotFoundException("Trainee does not exist"));
         Trainer trainer = trainerRepository.getByUsername(trainingCreateDto.getTrainerUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Trainer does not exist"));
+                .orElseThrow(() -> new ResourceNotFoundException("Trainer does not exist"));
 
 
         Training training = TrainingMapper.INSTANCE.mapCreateToTraining(trainingCreateDto);
@@ -68,7 +69,7 @@ public class TrainingServiceImpl implements TrainingService {
 
         Training training = trainingRepository.get(id).orElseThrow(() -> {
             log.warn("Training profile not found. Training id={}", id);
-            return new IllegalArgumentException("Training does not exist");
+            return new ResourceNotFoundException("Training does not exist");
         });
 
         return TrainingMapper.INSTANCE.mapToDto(training);
