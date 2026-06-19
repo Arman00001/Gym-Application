@@ -10,6 +10,7 @@ import com.epam.gymapp.service.training.TrainingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,19 +26,25 @@ public class TrainingController {
     private final TraineeService traineeService;
     private final TrainerService trainerService;
 
-    @GetMapping("/trainee")
+    @GetMapping("/trainees/{username}")
     @Operation(summary = "Get Trainee Trainings List")
     public ResponseEntity<List<TrainingDto>> getTraineeTrainings(
+            @PathVariable @NotBlank String username,
             @ModelAttribute @Valid TraineeTrainingsSearchCriteria criteria
     ) {
+        criteria.setUsername(username);
+
         return ResponseEntity.ok(traineeService.searchTrainings(criteria));
     }
 
-    @GetMapping("/trainer")
+    @GetMapping("/trainers/{username}")
     @Operation(summary = "Get Trainer Trainings List")
     public ResponseEntity<List<TrainingDto>> getTrainerTrainings(
+            @PathVariable @NotBlank String username,
             @ModelAttribute @Valid TrainerTrainingsSearchCriteria criteria
     ) {
+        criteria.setUsername(username);
+
         return ResponseEntity.ok(trainerService.searchTrainings(criteria));
     }
 
@@ -49,5 +56,4 @@ public class TrainingController {
         trainingService.createTraining(dto);
         return ResponseEntity.ok().build();
     }
-
 }

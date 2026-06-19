@@ -19,7 +19,7 @@ public class TrainingTypeController {
 
     private final TrainingTypeService trainingTypeService;
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<List<TrainingTypeDto>> getAll() {
         return ResponseEntity.ok(trainingTypeService.getAll());
     }

@@ -18,24 +18,29 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
-    @GetMapping
+    @GetMapping("/{username}/login")
     @Operation(summary = "Login")
     @ApiResponse(responseCode = "200", description = "Logged in successfully")
     public ResponseEntity<String> login(
-            @RequestParam("username") @NotBlank String username,
+            @PathVariable @NotBlank String username,
             @RequestParam("password") @NotBlank String password
-    ){
-        if(userService.login(username, password)){
+    ) {
+        if (userService.login(username, password)) {
             return ResponseEntity.ok("Login successful");
         }
 
         return ResponseEntity.status(401).body("Invalid username or password");
     }
 
-    @PutMapping
+    @PutMapping("/{username}/password")
     @Operation(summary = "Change Password")
     @ApiResponse(responseCode = "200", description = "Password changed successfully")
-    public ResponseEntity<String> changePassword(@Valid ChangePasswordRequestDto dto){
+    public ResponseEntity<String> changePassword(
+            @PathVariable @NotBlank String username,
+            @RequestBody @Valid ChangePasswordRequestDto dto
+    ) {
+        dto.setUsername(username);
+
         userService.changePassword(dto);
         return ResponseEntity.ok("Password changed successfully");
     }

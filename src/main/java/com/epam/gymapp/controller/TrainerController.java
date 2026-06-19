@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,12 +37,15 @@ public class TrainerController {
                 .body(trainerService.createTrainer(trainerCreateDto));
     }
 
-    @GetMapping
+    @GetMapping("/{username}")
     @Operation(summary = "Retrieve Trainer")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved trainer")
     })
-    public ResponseEntity<TrainerDto> get(@RequestParam("username") String username, @RequestParam("password") String password) {
+    public ResponseEntity<TrainerDto> get(
+            @PathVariable @NotBlank String username,
+            @RequestParam("password") @NotBlank String password
+    ) {
         var auth = new AuthenticationRequestDto();
         auth.setUsername(username);
         auth.setPassword(password);
@@ -50,31 +54,43 @@ public class TrainerController {
                 .ok(trainerService.getTrainerByUsername(auth));
     }
 
-    @GetMapping("/is-active/not-assigned")
-    @Operation(summary = "Retrieve Trainers list by username")
+    @GetMapping("/not-assigned/{traineeUsername}")
+    @Operation(summary = "Retrieve trainers not assigned to trainee")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved trainers")
     })
-    public ResponseEntity<List<TrainerDto>> getNotAssignedToTrainee(@RequestParam("username") String username) {
+    public ResponseEntity<List<TrainerDto>> getNotAssignedToTrainee(@PathVariable @NotBlank String traineeUsername) {
         return ResponseEntity
-                .ok(trainerService.getNotAssignedToTrainee(username));
+                .ok(trainerService.getNotAssignedToTrainee(traineeUsername));
     }
 
-    @PutMapping
+    @PutMapping("/{username}")
     @Operation(summary = "Update Trainer")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated trainer"),
     })
-    public ResponseEntity<TrainerDto> update(@RequestBody @Valid TrainerUpdateDto dto) {
+    public ResponseEntity<TrainerDto> update(
+            @PathVariable @NotBlank String username,
+            @RequestBody @Valid TrainerUpdateDto dto
+    ) {
+        dto.setUsername(username);
+
         return ResponseEntity
                 .ok(trainerService.updateTrainer(dto));
     }
 
-    @PatchMapping("/is-active")
+    @PatchMapping("/{username}/is-active")
     @Operation(summary = "Change Active Status of Trainer")
     @ApiResponse(responseCode = "200", description = "Successfully changed active status of the trainer")
-    public ResponseEntity<Void> patch(@RequestBody @Valid AuthenticationRequestDto dto){
-        trainerService.changeIsActiveStatus(dto);
+    public ResponseEntity<Void> patch(
+            @PathVariable @NotBlank String username,
+            @RequestParam("password") @NotBlank String password
+    ) {
+        var auth = new AuthenticationRequestDto();
+        auth.setUsername(username);
+        auth.setPassword(password);
+
+        trainerService.changeIsActiveStatus(auth);
         return ResponseEntity.ok().build();
     }
 }
