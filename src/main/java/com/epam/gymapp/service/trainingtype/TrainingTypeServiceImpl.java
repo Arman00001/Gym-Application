@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
     }
 
     @Override
+    @Transactional
     public TrainingTypeCreateResponse createTrainee(TrainingTypeCreateDto trainingTypeCreateDto) {
         log.info("Creating training type {}",
                 trainingTypeCreateDto.getName());
@@ -38,23 +40,24 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
     }
 
     @Override
+    @Transactional
     public void deleteTrainingType(Long id) {
         log.info("Deleting training type. id={}", id);
-        trainingTypeRepository.delete(id);
+        trainingTypeRepository.deleteById(id);
         log.info("Training type deleted. id={}", id);
     }
 
     @Override
     public List<TrainingTypeDto> getAll() {
         log.info("Retrieving all training types");
-        return TrainingTypeMapper.INSTANCE.mapToDtoList(trainingTypeRepository.getAll());
+        return TrainingTypeMapper.INSTANCE.mapToDtoList(trainingTypeRepository.findAll());
     }
 
     @Override
     public TrainingTypeDto getTrainingTypeById(Long id) {
         log.info("Getting training type. id={}", id);
 
-        TrainingType trainingType = trainingTypeRepository.get(id).orElseThrow(() -> {
+        TrainingType trainingType = trainingTypeRepository.findById(id).orElseThrow(() -> {
             log.warn("TrainingType profile not found. id={}", id);
             return new ResourceNotFoundException("TrainingType does not exist");
         });
@@ -65,7 +68,7 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
     @Override
     public TrainingTypeDto getTrainingTypeByName(String name) {
         log.info("Getting training type. name={}", name);
-        TrainingType trainingType = trainingTypeRepository.getByName(name).orElseThrow(()->{
+        TrainingType trainingType = trainingTypeRepository.findByName(name).orElseThrow(()->{
             log.warn("Training type not found. name={}", name);
             return new ResourceNotFoundException("Training type does not exist");
         });

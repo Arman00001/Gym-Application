@@ -67,7 +67,7 @@ public class TrainingServiceImpl implements TrainingService {
     public TrainingDto getTraining(Long id) {
         log.info("Getting training profile. Training id={}", id);
 
-        Training training = trainingRepository.get(id).orElseThrow(() -> {
+        Training training = trainingRepository.findById(id).orElseThrow(() -> {
             log.warn("Training profile not found. Training id={}", id);
             return new ResourceNotFoundException("Training does not exist");
         });

@@ -42,7 +42,7 @@ public class GymApplication {
             traineeTrainerListUpdateDto.setUsername(response.getUsername());
             traineeTrainerListUpdateDto.setPassword(response.getPassword());
             traineeTrainerListUpdateDto.setTrainerUsernames(List.of("Alex.Johnson","Emma.Wilson"));
-            facade.updateTraineeTrainers(traineeTrainerListUpdateDto);
+//            facade.updateTraineeTrainers(traineeTrainerListUpdateDto);
             System.out.println("Fetched created trainee: " + created.getFirstName());
         }
     }

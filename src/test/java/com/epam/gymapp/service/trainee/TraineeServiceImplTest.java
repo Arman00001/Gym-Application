@@ -5,13 +5,13 @@ import com.epam.gymapp.dto.DeleteRequestDto;
 import com.epam.gymapp.dto.trainee.*;
 import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.dto.user.UserCreateDto;
+import com.epam.gymapp.exception.BadCredentialsException;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.*;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
-import com.epam.gymapp.persistence.repository.trainee_trainer.TraineeTrainerRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.service.user.UserService;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,17 +40,16 @@ class TraineeServiceImplTest {
     @Mock
     private TrainerRepository trainerRepository;
 
-    @Mock
-    private TraineeTrainerRepository traineeTrainerRepository;
-
-    @Mock
-    private EntityManager entityManager;
-
-    @Mock
-    private EntityTransaction transaction;
-
-    @InjectMocks
     private TraineeServiceImpl traineeService;
+
+    @BeforeEach
+    void setUp() {
+        traineeService = new TraineeServiceImpl();
+
+        traineeService.setTraineeRepository(traineeRepository);
+        traineeService.setTrainerRepository(trainerRepository);
+        traineeService.setUserService(userService);
+    }
 
     @Test
     void createTrainee_shouldCreateUserAndSaveTraineeProfile() {
@@ -107,7 +106,7 @@ class TraineeServiceImplTest {
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> traineeService.getTraineeByUsername(auth))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainee does not exist");
     }
 
@@ -115,13 +114,13 @@ class TraineeServiceImplTest {
     void getTraineeById_shouldReturnDto_whenTraineeExists() {
         User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
         Trainee trainee = trainee(1L, user, "New York", "2000-01-01T00:00:00Z");
-        when(traineeRepository.get(1L)).thenReturn(Optional.of(trainee));
+        when(traineeRepository.findById(1L)).thenReturn(Optional.of(trainee));
 
         TraineeDto result = traineeService.getTraineeById(1L);
 
         assertThat(result.getFirstName()).isEqualTo("John");
         assertThat(result.getAddress()).isEqualTo("New York");
-        verify(traineeRepository).get(1L);
+        verify(traineeRepository).findById(1L);
     }
 
     @Test
@@ -139,14 +138,14 @@ class TraineeServiceImplTest {
         Trainee existing = trainee(1L, user, "Old address", "2000-01-01");
         when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(existing));
-        when(traineeRepository.update(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TraineeDto result = traineeService.updateTrainee(dto);
 
         assertThat(result.getFirstName()).isEqualTo("Johnny");
         assertThat(result.getIsActive()).isFalse();
         assertThat(result.getAddress()).isEqualTo("New address");
-        verify(traineeRepository).update(argThat(trainee ->
+        verify(traineeRepository).save(argThat(trainee ->
                 trainee.getId().equals(1L)
                         && trainee.getUser().getId().equals(10L)
                         && trainee.getUser().getFirstName().equals("Johnny")
@@ -166,10 +165,10 @@ class TraineeServiceImplTest {
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> traineeService.updateTrainee(dto))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainee does not exist");
 
-        verify(traineeRepository, never()).update(any());
+        verify(traineeRepository, never()).save(any());
         verify(userService).isAuthenticated("John.Smith", "password12");
     }
 
@@ -191,28 +190,35 @@ class TraineeServiceImplTest {
     @Test
     void changeIsActiveStatus_shouldAuthenticateAndReturnUpdatedTrainee() {
         AuthenticationRequestDto auth = auth("John.Smith", "password12");
-        User user = user(10L, "John", "Smith", "John.Smith", "password12", false);
-        Trainee updated = trainee(1L, user, "New York", "2000-01-01");
+
+        User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
+        Trainee trainee = trainee(1L, user, "New York", "2000-01-01");
+
         when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
-        when(traineeRepository.changeIsActiveStatus("John.Smith")).thenReturn(updated);
+        when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(trainee));
+        when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         TraineeDto result = traineeService.changeIsActiveStatus(auth);
 
         assertThat(result.getFirstName()).isEqualTo("John");
         assertThat(result.getIsActive()).isFalse();
-        verify(traineeRepository).changeIsActiveStatus("John.Smith");
+
+        verify(traineeRepository).getByUsername("John.Smith");
+        verify(traineeRepository).save(trainee);
     }
 
     @Test
     void changeIsActiveStatus_shouldThrowException_whenCredentialsAreInvalid() {
         AuthenticationRequestDto auth = auth("John.Smith", "bad");
+
         when(userService.isAuthenticated("John.Smith", "bad")).thenReturn(false);
 
         assertThatThrownBy(() -> traineeService.changeIsActiveStatus(auth))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BadCredentialsException.class)
                 .hasMessage("Incorrect Credentials");
 
-        verify(traineeRepository, never()).changeIsActiveStatus(any());
+        verify(traineeRepository, never()).getByUsername(any());
+        verify(traineeRepository, never()).save(any());
     }
 
     @Test
@@ -246,58 +252,10 @@ class TraineeServiceImplTest {
         when(userService.isAuthenticated("John.Smith", "bad")).thenReturn(false);
 
         assertThatThrownBy(() -> traineeService.searchTrainings(criteria))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BadCredentialsException.class)
                 .hasMessage("Incorrect Credentials");
 
         verify(traineeRepository, never()).getTrainingsByCriteria(any());
-    }
-
-    @Test
-    void updateTrainerList_shouldAuthenticateReplaceTrainerListAndCommitTransaction() {
-        TraineeTrainerListUpdateDto dto = new TraineeTrainerListUpdateDto();
-        dto.setUsername("John.Smith");
-        dto.setPassword("password12");
-        dto.setTrainerUsernames(List.of("Alex.Brown", "Emma.Wilson"));
-
-        Trainee trainee = trainee(1L, user(10L, "John", "Smith", "John.Smith", "password12", true), "New York", "2000-01-01");
-        Trainer trainerOne = trainer(2L, user(20L, "Alex", "Brown", "Alex.Brown", "password12", true), trainingType(5L, "Yoga"));
-        Trainer trainerTwo = trainer(3L, user(30L, "Emma", "Wilson", "Emma.Wilson", "password12", true), trainingType(6L, "Fitness"));
-
-        when(entityManager.getTransaction()).thenReturn(transaction);
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
-        when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(trainee));
-        when(trainerRepository.getByUsernames(List.of("Alex.Brown", "Emma.Wilson"))).thenReturn(List.of(trainerOne, trainerTwo));
-
-        TraineeDto result = traineeService.updateTrainerList(dto);
-
-        assertThat(result.getFirstName()).isEqualTo("John");
-        assertThat(result.getTrainers()).extracting(TraineeTrainerDto::getUsername)
-                .containsExactly("Alex.Brown", "Emma.Wilson");
-        verify(traineeTrainerRepository).updateTrainerList(trainee, List.of(trainerOne, trainerTwo));
-        verify(transaction).begin();
-        verify(transaction).commit();
-        verify(transaction, never()).rollback();
-    }
-
-    @Test
-    void updateTrainerList_shouldRollbackAndThrowException_whenCredentialsAreInvalid() {
-        TraineeTrainerListUpdateDto dto = new TraineeTrainerListUpdateDto();
-        dto.setUsername("John.Smith");
-        dto.setPassword("bad");
-        dto.setTrainerUsernames(List.of("Alex.Brown"));
-
-        when(entityManager.getTransaction()).thenReturn(transaction);
-        when(userService.isAuthenticated("John.Smith", "bad")).thenReturn(false);
-        when(transaction.isActive()).thenReturn(true);
-
-        assertThatThrownBy(() -> traineeService.updateTrainerList(dto))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Incorrect Credentials");
-
-        verify(transaction).begin();
-        verify(transaction).rollback();
-        verify(transaction, never()).commit();
-        verifyNoInteractions(trainerRepository, traineeTrainerRepository);
     }
 
     private static AuthenticationRequestDto auth(String username, String password) {

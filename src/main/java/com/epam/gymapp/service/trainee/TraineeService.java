@@ -11,7 +11,6 @@ public interface TraineeService {
     TraineeCreateResponse createTrainee(TraineeCreateDto traineeCreateDto);
 
     TraineeDto updateTrainee(TraineeUpdateDto traineeCreateDto);
-    TraineeDto updateTrainerList(TraineeTrainerListUpdateDto dto);
 
     void deleteTrainee(DeleteRequestDto dto);
     void deleteTraineeByUsername(DeleteRequestDto dto);

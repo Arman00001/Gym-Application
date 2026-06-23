@@ -2,6 +2,7 @@ package com.epam.gymapp.service.training;
 
 import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
@@ -75,7 +76,7 @@ class TrainingServiceImplTest {
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> trainingService.createTraining(dto))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainee does not exist");
 
         verify(trainerRepository, never()).getByUsername(any());
@@ -89,7 +90,7 @@ class TrainingServiceImplTest {
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> trainingService.createTraining(dto))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainer does not exist");
 
         verify(trainingRepository, never()).save(any());
@@ -104,7 +105,7 @@ class TrainingServiceImplTest {
         training.setType(type);
         training.setDate(LocalDate.parse("2025-01-01"));
         training.setDuration(10000L);
-        when(trainingRepository.get(1L)).thenReturn(Optional.of(training));
+        when(trainingRepository.findById(1L)).thenReturn(Optional.of(training));
 
         TrainingDto result = trainingService.getTraining(1L);
 
@@ -113,18 +114,18 @@ class TrainingServiceImplTest {
         assertThat(result.getType()).isSameAs(type);
         assertThat(result.getDate()).isEqualTo(LocalDate.parse("2025-01-01"));
         assertThat(result.getDuration()).isEqualTo(10000L);
-        verify(trainingRepository).get(1L);
+        verify(trainingRepository).findById(1L);
     }
 
     @Test
     void getTraining_shouldThrowException_whenTrainingDoesNotExist() {
-        when(trainingRepository.get(4L)).thenReturn(Optional.empty());
+        when(trainingRepository.findById(4L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> trainingService.getTraining(4L))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Training does not exist");
 
-        verify(trainingRepository).get(4L);
+        verify(trainingRepository).findById(4L);
     }
 
     private static TrainingCreateDto createDto(TrainingType type) {

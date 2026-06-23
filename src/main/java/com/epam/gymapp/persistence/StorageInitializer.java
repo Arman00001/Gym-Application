@@ -5,15 +5,20 @@ import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
 import com.epam.gymapp.persistence.entity.TrainingType;
 import com.epam.gymapp.persistence.entity.User;
-import jakarta.annotation.PostConstruct;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityTransaction;
+import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
+import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
+import com.epam.gymapp.persistence.repository.training.TrainingRepository;
+import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
+import com.epam.gymapp.persistence.repository.user.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -21,13 +26,19 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
-public class StorageInitializer {
+@RequiredArgsConstructor
+public class StorageInitializer implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(StorageInitializer.class);
 
-    private final EntityManager entityManager;
+    private final UserRepository userRepository;
+    private final TraineeRepository traineeRepository;
+    private final TrainerRepository trainerRepository;
+    private final TrainingRepository trainingRepository;
+    private final TrainingTypeRepository trainingTypeRepository;
 
     @Value("${storage.init.file}")
     private String initFilePath;
@@ -41,26 +52,16 @@ public class StorageInitializer {
     private final Map<Long, TrainingType> trainingTypesByFileId = new HashMap<>();
     private final Map<String, TrainingType> trainingTypesByName = new HashMap<>();
 
-    public StorageInitializer(
-            @Qualifier("entityManager") EntityManager entityManager
-    ) {
-        this.entityManager = entityManager;
-
-    }
-
-    @PostConstruct
-    public void init() {
+    @Override
+    @Transactional
+    public void run(ApplicationArguments args) {
         log.info("Initializing storage from file: {}", initFilePath);
 
-        EntityTransaction transaction = entityManager.getTransaction();
         try {
-            transaction.begin();
-
             ClassPathResource resource = new ClassPathResource(initFilePath);
 
             if (!resource.exists()) {
                 log.warn("Storage initialization file was not found: {}", initFilePath);
-                transaction.rollback();
                 return;
             }
 
@@ -80,29 +81,27 @@ public class StorageInitializer {
 
                     parseLine(line);
                 }
-
-                entityManager.flush();
-                transaction.commit();
-
-                log.info(
-                        "Storage initialized successfully. users={}, trainees={}, trainers={}, trainings={}",
-                        entityManager.createQuery("SELECT COUNT(u) FROM User u").getSingleResult(),
-                        entityManager.createQuery("SELECT COUNT(t) FROM Trainee t").getSingleResult(),
-                        entityManager.createQuery("SELECT COUNT(t) FROM Trainer t").getSingleResult(),
-                        entityManager.createQuery("SELECT COUNT(t) FROM Training t").getSingleResult()
-                );
-                log.info(
-                        "Users {}",entityManager.createQuery("SELECT u.username FROM User u").getResultList()
-                );
-
             }
+
+            log.info(
+                    "Storage initialized successfully. users={}, trainees={}, trainers={}, trainings={}",
+                    userRepository.count(),
+                    traineeRepository.count(),
+                    trainerRepository.count(),
+                    trainingRepository.count()
+            );
+
+            log.info(
+                    "Users {}",
+                    userRepository.findAll()
+                            .stream()
+                            .map(User::getUsername)
+                            .collect(Collectors.toList())
+            );
+
         } catch (Exception e) {
-            if (transaction.isActive()) {
-                transaction.rollback();
-            }
             log.error("Failed to initialize storage from file: {}", initFilePath, e);
             throw new IllegalStateException("Failed to initialize storage", e);
-
         }
     }
 
@@ -125,18 +124,23 @@ public class StorageInitializer {
         validateLength(parts, 7, "USER");
 
         Long fileId = Long.parseLong(parts[1]);
-        User user = new User();
 
+        User user = new User();
         user.setFirstName(parts[2]);
         user.setLastName(parts[3]);
         user.setUsername(parts[4]);
         user.setPassword(parts[5]);
         user.setIsActive(Boolean.parseBoolean(parts[6]));
 
-        entityManager.persist(user);
+        user = userRepository.save(user);
         usersByFileId.put(fileId, user);
 
-        log.debug("Initialized user: fileId={}, id={}, username={}", fileId, user.getId(), user.getUsername());
+        log.debug(
+                "Initialized user: fileId={}, id={}, username={}",
+                fileId,
+                user.getId(),
+                user.getUsername()
+        );
     }
 
     private void parseTrainee(String[] parts) {
@@ -150,7 +154,7 @@ public class StorageInitializer {
         trainee.setDateOfBirth(parseDate(parts[3]));
         trainee.setAddress(parts[4]);
 
-        entityManager.persist(trainee);
+        trainee = traineeRepository.save(trainee);
         traineesByFileId.put(fileId, trainee);
 
         log.debug(
@@ -172,7 +176,7 @@ public class StorageInitializer {
         TrainingType trainingType = getTrainingType(parts[4]);
         trainer.setSpecialization(trainingType);
 
-        entityManager.persist(trainer);
+        trainer = trainerRepository.save(trainer);
         trainersByFileId.put(fileId, trainer);
 
         log.debug(
@@ -197,40 +201,48 @@ public class StorageInitializer {
         training.setDate(parseDate(parts[6]));
         training.setDuration(Long.parseLong(parts[7]));
 
-        entityManager.persist(training);
+        training = trainingRepository.save(training);
 
         log.debug("Initialized training: id={}", training.getId());
     }
 
     private User getUser(Long fileId, String recordType) {
         User user = usersByFileId.get(fileId);
+
         if (user == null) {
             throw new IllegalArgumentException(recordType + " references non-existing userId=" + fileId);
         }
+
         return user;
     }
 
     private Trainee getTrainee(Long fileId) {
         Trainee trainee = traineesByFileId.get(fileId);
+
         if (trainee == null) {
             throw new IllegalArgumentException("TRAINING references non-existing traineeId=" + fileId);
         }
+
         return trainee;
     }
 
     private Trainer getTrainer(Long fileId) {
         Trainer trainer = trainersByFileId.get(fileId);
+
         if (trainer == null) {
             throw new IllegalArgumentException("TRAINING references non-existing trainerId=" + fileId);
         }
+
         return trainer;
     }
 
     private LocalDate parseDate(String value) {
         String trimmedValue = value.trim();
+
         if (trimmedValue.contains("T")) {
             return LocalDate.parse(trimmedValue.substring(0, trimmedValue.indexOf('T')));
         }
+
         return LocalDate.parse(trimmedValue);
     }
 
@@ -253,14 +265,18 @@ public class StorageInitializer {
         log.info("Initializing training types from file: {}", trainingTypesPath);
 
         ClassPathResource resource = new ClassPathResource(trainingTypesPath);
+
         if (!resource.exists()) {
-            throw new IllegalArgumentException("Training types initialization file was not found: " + trainingTypesPath);
+            throw new IllegalArgumentException(
+                    "Training types initialization file was not found: " + trainingTypesPath
+            );
         }
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)
         )) {
             String line;
+
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
 
@@ -291,15 +307,19 @@ public class StorageInitializer {
             throw new IllegalArgumentException("Invalid TRAINING_TYPE record");
         }
 
-        TrainingType trainingType = findTrainingTypeByName(name);
+        TrainingType trainingType = trainingTypesByName.get(name);
+
         if (trainingType == null) {
-            trainingType = new TrainingType();
-            trainingType.setName(name);
-            entityManager.persist(trainingType);
-            entityManager.flush();
+            trainingType = trainingTypeRepository.findByName(name)
+                    .orElseGet(() -> {
+                        TrainingType newTrainingType = new TrainingType();
+                        newTrainingType.setName(name);
+                        return trainingTypeRepository.save(newTrainingType);
+                    });
         }
 
         trainingTypesByName.put(name, trainingType);
+
         if (fileId != null) {
             trainingTypesByFileId.put(fileId, trainingType);
         }
@@ -316,17 +336,20 @@ public class StorageInitializer {
 
         if (trimmedValue.matches("\\d+")) {
             TrainingType trainingType = trainingTypesByFileId.get(Long.parseLong(trimmedValue));
+
             if (trainingType != null) {
                 return trainingType;
             }
         }
 
         TrainingType trainingType = trainingTypesByName.get(trimmedValue);
+
         if (trainingType != null) {
             return trainingType;
         }
 
-        trainingType = findTrainingTypeByName(trimmedValue);
+        trainingType = trainingTypeRepository.findByName(trimmedValue).orElse(null);
+
         if (trainingType != null) {
             trainingTypesByName.put(trimmedValue, trainingType);
             return trainingType;
@@ -335,17 +358,5 @@ public class StorageInitializer {
         throw new IllegalArgumentException(
                 "Unknown training type: " + value + ". Add it to " + trainingTypesPath
         );
-    }
-
-    private TrainingType findTrainingTypeByName(String name) {
-        return entityManager
-                .createQuery(
-                        "SELECT t FROM TrainingType t WHERE t.name = :name",
-                        TrainingType.class
-                )
-                .setParameter("name", name)
-                .getResultStream()
-                .findFirst()
-                .orElse(null);
     }
 }

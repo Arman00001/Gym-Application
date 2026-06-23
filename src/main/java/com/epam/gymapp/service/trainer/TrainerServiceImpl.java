@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -54,11 +55,12 @@ public class TrainerServiceImpl implements TrainerService {
 
 
     @Override
+    @Transactional
     public TrainerCreateResponse createTrainer(TrainerCreateDto dto) {
         log.info("Creating trainer profile for {} {}",
                 dto.getFirstName(),
                 dto.getLastName());
-        TrainingType trainingType = trainingTypeRepository.getByName(dto.getSpecialization()).orElseThrow(() -> {
+        TrainingType trainingType = trainingTypeRepository.findByName(dto.getSpecialization()).orElseThrow(() -> {
             log.warn("Specialization not found. name={}", dto.getSpecialization());
             return new ResourceNotFoundException("Specialization not found");
         });
@@ -76,6 +78,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
+    @Transactional
     public TrainerDto updateTrainer(TrainerUpdateDto dto) {
         log.info("Updating trainer profile. username={}", dto.getUsername());
         if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
@@ -89,14 +92,14 @@ public class TrainerServiceImpl implements TrainerService {
             user.setLastName(dto.getLastName());
             user.setIsActive(dto.getIsActive());
 
-            TrainingType specialization = trainingTypeRepository.getByName(dto.getSpecialization()).orElseThrow(() -> {
+            TrainingType specialization = trainingTypeRepository.findByName(dto.getSpecialization()).orElseThrow(() -> {
                 log.warn("Specialization not found. name={}", dto.getSpecialization());
                 return new ResourceNotFoundException("Specialization not found");
             });
 
             existing.setSpecialization(specialization);
 
-            Trainer updatedTrainer = trainerRepository.update(existing);
+            Trainer updatedTrainer = trainerRepository.save(existing);
             List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(user.getUsername());
 
             log.info("Trainer profile updated successfully. username={}", user.getUsername());
@@ -111,7 +114,7 @@ public class TrainerServiceImpl implements TrainerService {
     public TrainerDto getTrainerById(Long id) {
         log.info("Getting trainer profile. id={}", id);
 
-        Trainer trainer = trainerRepository.get(id).orElseThrow(() -> {
+        Trainer trainer = trainerRepository.findById(id).orElseThrow(() -> {
             log.warn("Trainer profile not found. id={}", id);
             return new ResourceNotFoundException("Trainer does not exist");
         });
@@ -158,7 +161,14 @@ public class TrainerServiceImpl implements TrainerService {
     public TrainerDto changeIsActiveStatus(AuthenticationRequestDto auth) {
         log.info("Changing active status for: username = {}", auth.getUsername());
         if (userService.isAuthenticated(auth.getUsername(), auth.getPassword())) {
-            Trainer trainer = trainerRepository.changeIsActiveStatus(auth.getUsername());
+            Trainer trainer = trainerRepository.getByUsername(auth.getUsername()).orElseThrow(() -> {
+                log.warn("Cannot update trainer. Trainer not found. username={}", auth.getUsername());
+                return new ResourceNotFoundException("Trainer does not exist");
+            });
+            User user = trainer.getUser();
+            user.setIsActive(!user.getIsActive());
+            trainerRepository.save(trainer);
+
             return TrainerMapper.INSTANCE.mapToDto(trainer, trainer.getUser(), trainer.getSpecialization());
         }
         throw new BadCredentialsException("Incorrect Credentials");

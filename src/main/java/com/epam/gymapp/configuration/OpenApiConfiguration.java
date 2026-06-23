@@ -29,15 +29,15 @@ import org.springframework.context.annotation.Import;
 })
 public class OpenApiConfiguration {
 
-    @Bean
-    public WebProperties webProperties() {
-        return new WebProperties();
-    }
+//    @Bean
+//    public WebProperties webProperties() {
+//        return new WebProperties();
+//    }
 
-    @Bean
-    public WebMvcProperties webMvcProperties(){
-        return new WebMvcProperties();
-    }
+//    @Bean
+//    public WebMvcProperties webMvcProperties(){
+//        return new WebMvcProperties();
+//    }
 
     @Bean
     public OpenAPI gymOpenAPI() {

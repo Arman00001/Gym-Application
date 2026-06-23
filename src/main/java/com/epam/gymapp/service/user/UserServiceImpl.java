@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -48,13 +49,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getByUsername(String username) {
-        return userRepository.getByUsername(username)
+        return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User does not exist"));
     }
 
     @Override
+    @Transactional
     public User updateUser(UserUpdateDto dto) {
-        User user = userRepository.getById(dto.getId()).orElseThrow(() -> {
+        User user = userRepository.findById(dto.getId()).orElseThrow(() -> {
             log.warn("User not found. username={}", dto.getUsername());
             return new ResourceNotFoundException("User does not exist");
         });
@@ -63,37 +65,40 @@ public class UserServiceImpl implements UserService {
         user.setLastName(dto.getLastName());
         user.setIsActive(dto.getIsActive());
 
-        return userRepository.update(user);
+        return userRepository.save(user);
     }
 
     @Override
     public void deleteUser(Long id) {
         log.info("Deleting user profile by id. id={}", id);
-        userRepository.delete(id);
+        userRepository.deleteById(id);
         log.info("User profile deleted. id={}", id);
     }
 
     @Override
     public void deleteUser(User user) {
         log.info("Deleting user profile. id={}", user.getId());
-        userRepository.deleteUser(user);
+        userRepository.delete(user);
         log.info("User profile deleted. id={}", user.getId());
     }
 
     @Override
     public User getById(Long id) {
-        return userRepository.getById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
     @Override
     public boolean isAuthenticated(String username, String password) {
-        return userRepository.isAuthenticated(username, password);
+        return userRepository.existsUserByUsernameAndPassword(username,password);
+//        return userRepository.isAuthenticated(username, password);
     }
 
     @Override
     public void changePassword(ChangePasswordRequestDto dto) {
         if(isAuthenticated(dto.getUsername(), dto.getOldPassword())){
-            userRepository.changePassword(dto.getUsername(),dto.getNewPassword());
+            User user = userRepository.getByUsername(dto.getUsername());
+            user.setPassword(dto.getNewPassword());
+            userRepository.save(user);
         }
 
         throw new BadCredentialsException("Incorrect Credentials");
@@ -101,7 +106,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean login(String username, String password) {
-        return userRepository.login(username, password);
+        return userRepository.existsUserByUsernameAndPassword(username, password);
     }
 
     private String generateUsername(String firstName, String lastName) {

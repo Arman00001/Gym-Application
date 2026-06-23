@@ -12,107 +12,107 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-@Repository
-public class TrainingTypeRepositoryImpl implements TrainingTypeRepository {
-    private static final Logger log = LoggerFactory.getLogger(TrainingTypeRepositoryImpl.class);
-    private EntityManager entityManager;
-
-    @Autowired
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
-    }
-
-    @Override
-    public TrainingType save(TrainingType trainingType) {
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-
-            entityManager.persist(trainingType);
-            transaction.commit();
-            log.debug("Saved trainingType to database. id={}", trainingType.getId());
-            return trainingType;
-        } catch (Exception e) {
-            if (transaction.isActive()) {
-                transaction.rollback();
-            }
-            throw e;
-        }
-    }
-
-    @Override
-    public void delete(Long id) {
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-
-            TrainingType trainingType = entityManager.find(TrainingType.class, id);
-            if (trainingType != null) {
-                entityManager.remove(trainingType);
-            } else {
-                log.warn("Cannot delete trainingType. Not found. id={}", id);
-                throw new ResourceNotFoundException("TrainingType does not exist");
-            }
-            transaction.commit();
-
-            log.debug("Deleted trainingType. id={}", id);
-        } catch (Exception e){
-            if(transaction.isActive()){
-                transaction.rollback();
-            }
-            throw e;
-        }
-    }
-
-    @Override
-    public void delete(TrainingType trainingType) {
-        EntityTransaction transaction = entityManager.getTransaction();
-
-        try {
-            transaction.begin();
-
-            if (trainingType.getId() == null) {
-                throw new IllegalArgumentException("TrainingType id must not be null");
-            }
-            TrainingType managedTrainingType = entityManager.find(TrainingType.class, trainingType.getId());
-            if (managedTrainingType == null) {
-                log.warn("Cannot delete trainingType. Not found. id={}", trainingType.getId());
-                throw new ResourceNotFoundException("TrainingType does not exist");
-            }
-
-            entityManager.remove(managedTrainingType);
-            transaction.commit();
-            log.debug("Deleted trainingType. id={}", trainingType.getId());
-        } catch (Exception e){
-            if(transaction.isActive()){
-                transaction.rollback();
-            }
-            throw e;
-        }
-    }
-
-    @Override
-    public Optional<TrainingType> get(Long id) {
-        log.debug("Getting training from storage. id={}", id);
-        return Optional.ofNullable(entityManager.find(TrainingType.class, id));
-    }
-
-    @Override
-    public Optional<TrainingType> getByName(String name) {
-        return Optional.ofNullable(
-                entityManager
-                        .createQuery("SELECT t FROM TrainingType t WHERE t.name=:name", TrainingType.class)
-                        .setParameter("name", name)
-                        .getSingleResultOrNull()
-        );
-    }
-
-    @Override
-    public List<TrainingType> getAll() {
-        return entityManager
-                .createQuery("SELECT t FROM TrainingType t", TrainingType.class)
-                .getResultList();
-    }
-}
+//@Repository
+//public class TrainingTypeRepositoryImpl implements TrainingTypeRepository {
+//    private static final Logger log = LoggerFactory.getLogger(TrainingTypeRepositoryImpl.class);
+//    private EntityManager entityManager;
+//
+//    @Autowired
+//    public void setEntityManager(EntityManager entityManager) {
+//        this.entityManager = entityManager;
+//    }
+//
+//    @Override
+//    public TrainingType save(TrainingType trainingType) {
+//        EntityTransaction transaction = entityManager.getTransaction();
+//
+//        try {
+//            transaction.begin();
+//
+//            entityManager.persist(trainingType);
+//            transaction.commit();
+//            log.debug("Saved trainingType to database. id={}", trainingType.getId());
+//            return trainingType;
+//        } catch (Exception e) {
+//            if (transaction.isActive()) {
+//                transaction.rollback();
+//            }
+//            throw e;
+//        }
+//    }
+//
+//    @Override
+//    public void delete(Long id) {
+//        EntityTransaction transaction = entityManager.getTransaction();
+//
+//        try {
+//            transaction.begin();
+//
+//            TrainingType trainingType = entityManager.find(TrainingType.class, id);
+//            if (trainingType != null) {
+//                entityManager.remove(trainingType);
+//            } else {
+//                log.warn("Cannot delete trainingType. Not found. id={}", id);
+//                throw new ResourceNotFoundException("TrainingType does not exist");
+//            }
+//            transaction.commit();
+//
+//            log.debug("Deleted trainingType. id={}", id);
+//        } catch (Exception e){
+//            if(transaction.isActive()){
+//                transaction.rollback();
+//            }
+//            throw e;
+//        }
+//    }
+//
+//    @Override
+//    public void delete(TrainingType trainingType) {
+//        EntityTransaction transaction = entityManager.getTransaction();
+//
+//        try {
+//            transaction.begin();
+//
+//            if (trainingType.getId() == null) {
+//                throw new IllegalArgumentException("TrainingType id must not be null");
+//            }
+//            TrainingType managedTrainingType = entityManager.find(TrainingType.class, trainingType.getId());
+//            if (managedTrainingType == null) {
+//                log.warn("Cannot delete trainingType. Not found. id={}", trainingType.getId());
+//                throw new ResourceNotFoundException("TrainingType does not exist");
+//            }
+//
+//            entityManager.remove(managedTrainingType);
+//            transaction.commit();
+//            log.debug("Deleted trainingType. id={}", trainingType.getId());
+//        } catch (Exception e){
+//            if(transaction.isActive()){
+//                transaction.rollback();
+//            }
+//            throw e;
+//        }
+//    }
+//
+//    @Override
+//    public Optional<TrainingType> get(Long id) {
+//        log.debug("Getting training from storage. id={}", id);
+//        return Optional.ofNullable(entityManager.find(TrainingType.class, id));
+//    }
+//
+//    @Override
+//    public Optional<TrainingType> findByName(String name) {
+//        return Optional.ofNullable(
+//                entityManager
+//                        .createQuery("SELECT t FROM TrainingType t WHERE t.name=:name", TrainingType.class)
+//                        .setParameter("name", name)
+//                        .getSingleResultOrNull()
+//        );
+//    }
+//
+//    @Override
+//    public List<TrainingType> getAll() {
+//        return entityManager
+//                .createQuery("SELECT t FROM TrainingType t", TrainingType.class)
+//                .getResultList();
+//    }
+//}

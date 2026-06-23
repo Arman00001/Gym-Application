@@ -2,6 +2,7 @@ package com.epam.gymapp.service.user;
 
 import com.epam.gymapp.dto.user.UserCreateDto;
 import com.epam.gymapp.dto.user.UserUpdateDto;
+import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.user.UserRepository;
 import com.epam.gymapp.util.PasswordGenerator;
@@ -101,20 +102,23 @@ class UserServiceImplTest {
         User user = new User();
         user.setUsername("John.Smith");
 
-        when(userRepository.getByUsername("John.Smith")).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername("John.Smith")).thenReturn(Optional.of(user));
 
         User result = userService.getByUsername("John.Smith");
 
         assertThat(result).isSameAs(user);
+        verify(userRepository).findByUsername("John.Smith");
     }
 
     @Test
     void getByUsername_shouldThrowException_whenUserDoesNotExist() {
-        when(userRepository.getByUsername("missing")).thenReturn(Optional.empty());
+        when(userRepository.findByUsername("missing")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.getByUsername("missing"))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User does not exist");
+
+        verify(userRepository).findByUsername("missing");
     }
 
     @Test
@@ -134,8 +138,8 @@ class UserServiceImplTest {
         existing.setPassword("oldPassword");
         existing.setIsActive(true);
 
-        when(userRepository.getById(1L)).thenReturn(Optional.of(existing));
-        when(userRepository.update(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         User result = userService.updateUser(dto);
 
@@ -146,8 +150,8 @@ class UserServiceImplTest {
         assertThat(result.getLastName()).isEqualTo("Smith");
         assertThat(result.getIsActive()).isFalse();
 
-        verify(userRepository).getById(1L);
-        verify(userRepository).update(existing);
-        verify(userRepository, never()).getByUsername(any());
+        verify(userRepository).findById(1L);
+        verify(userRepository).save(existing);
+        verify(userRepository, never()).findByUsername(any());
     }
 }

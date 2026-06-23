@@ -48,9 +48,9 @@ public class GymFacade {
         return traineeService.searchTrainings(criteria);
     }
 
-    public TraineeDto updateTraineeTrainers(TraineeTrainerListUpdateDto dto) {
-        return traineeService.updateTrainerList(dto);
-    }
+//    public TraineeDto updateTraineeTrainers(TraineeTrainerListUpdateDto dto) {
+//        return traineeService.updateTrainerList(dto);
+//    }
 
     public TrainerCreateResponse createTrainer(TrainerCreateDto dto) {
         return trainerService.createTrainer(dto);
