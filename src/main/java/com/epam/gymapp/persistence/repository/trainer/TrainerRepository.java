@@ -41,16 +41,4 @@ public interface TrainerRepository extends JpaRepository<Trainer,Long> {
         FROM TraineeTrainer tt
         WHERE tt.trainee.user.username = :traineeUsername""")
     List<Trainer> getAllByTraineeUsername(String traineeUsername);
-
-
-//    Trainer save(Trainer trainer);
-//
-//    Trainer update(Trainer trainer);
-//
-//    Optional<Trainer> get(Long id);
-//    Optional<Trainer> getByUserId(Long userId);
-//    List<Trainer> getAll();
-//
-//    Trainer changeIsActiveStatus(String username);
-
 }

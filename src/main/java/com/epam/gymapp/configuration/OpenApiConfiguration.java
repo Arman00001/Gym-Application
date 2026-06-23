@@ -10,8 +10,6 @@ import org.springdoc.core.properties.SwaggerUiOAuthProperties;
 import org.springdoc.webmvc.core.configuration.MultipleOpenApiSupportConfiguration;
 import org.springdoc.webmvc.core.configuration.SpringDocWebMvcConfiguration;
 import org.springdoc.webmvc.ui.SwaggerConfig;
-import org.springframework.boot.autoconfigure.web.WebProperties;
-import org.springframework.boot.webmvc.autoconfigure.WebMvcProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -28,16 +26,6 @@ import org.springframework.context.annotation.Import;
         SwaggerUiOAuthProperties.class
 })
 public class OpenApiConfiguration {
-
-//    @Bean
-//    public WebProperties webProperties() {
-//        return new WebProperties();
-//    }
-
-//    @Bean
-//    public WebMvcProperties webMvcProperties(){
-//        return new WebMvcProperties();
-//    }
 
     @Bean
     public OpenAPI gymOpenAPI() {

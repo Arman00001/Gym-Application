@@ -2,7 +2,6 @@ package com.epam.gymapp;
 
 import com.epam.gymapp.configuration.AppConfig;
 import com.epam.gymapp.configuration.OpenApiConfiguration;
-import com.epam.gymapp.configuration.RepoConfig;
 import com.epam.gymapp.configuration.WebConfig;
 import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
@@ -28,7 +27,6 @@ public class GymServerApplication {
 
         applicationContext.register(
                 AppConfig.class,
-                RepoConfig.class,
                 WebConfig.class,
                 OpenApiConfiguration.class
         );

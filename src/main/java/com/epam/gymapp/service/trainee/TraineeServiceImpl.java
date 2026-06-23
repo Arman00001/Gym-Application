@@ -15,7 +15,6 @@ import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.service.user.UserService;
-import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -199,7 +198,7 @@ public class TraineeServiceImpl implements TraineeService {
             Trainee trainee = traineeRepository.getByUsername(auth.getUsername()).orElseThrow(() -> {
                 log.warn("Cannot update trainee. Trainee not found. username={}", auth.getUsername());
                 return new ResourceNotFoundException("Trainee does not exist");
-            });;
+            });
             User user = trainee.getUser();
             user.setIsActive(!user.getIsActive());
             traineeRepository.save(trainee);

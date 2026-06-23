@@ -17,7 +17,7 @@ public class MainWebAppInitializer implements WebApplicationInitializer {
 
         AnnotationConfigWebApplicationContext rootContext =
                 new AnnotationConfigWebApplicationContext();
-        rootContext.register(AppConfig.class, RepoConfig.class);
+        rootContext.register(AppConfig.class);
 
         servletContext.addListener(new ContextLoaderListener(rootContext));
 

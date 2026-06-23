@@ -15,7 +15,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -282,14 +281,6 @@ class TraineeServiceImplTest {
         trainingType.setId(id);
         trainingType.setName(name);
         return trainingType;
-    }
-
-    private static Trainer trainer(Long id, User user, TrainingType specialization) {
-        Trainer trainer = new Trainer();
-        trainer.setId(id);
-        trainer.setUser(user);
-        trainer.setSpecialization(specialization);
-        return trainer;
     }
 
     private static Training training(Long id, String name, TrainingType type) {
