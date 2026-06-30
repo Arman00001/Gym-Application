@@ -59,7 +59,7 @@ class TraineeServiceImplTest {
 
         User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
         CreatedUserResult createdUser = new CreatedUserResult(user,user.getPassword());
-        when(userService.createUser(any(UserCreateDto.class),Role.TRAINEE)).thenReturn(createdUser);
+        when(userService.createUser(any(UserCreateDto.class),eq(Role.TRAINEE))).thenReturn(createdUser);
         when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> {
             Trainee trainee = invocation.getArgument(0);
             trainee.setId(1L);
@@ -77,7 +77,7 @@ class TraineeServiceImplTest {
         assertThat(savedTrainee.getUser()).isSameAs(user);
         assertThat(savedTrainee.getDateOfBirth()).isEqualTo(dto.getDateOfBirth());
         assertThat(savedTrainee.getAddress()).isEqualTo("New York");
-        verify(userService).createUser(any(UserCreateDto.class),Role.TRAINEE);
+        verify(userService).createUser(any(UserCreateDto.class),eq(Role.TRAINEE));
     }
 
     @Test

@@ -65,7 +65,7 @@ class TrainerServiceImplTest {
         User user = user(10L, "Alex", "Brown", "Alex.Brown", "password12", true);
         CreatedUserResult createdUser = new CreatedUserResult(user,user.getPassword());
         when(trainingTypeRepository.findByName("Yoga")).thenReturn(Optional.of(yoga));
-        when(userService.createUser(any(UserCreateDto.class), Role.TRAINER)).thenReturn(createdUser);
+        when(userService.createUser(any(UserCreateDto.class), eq(Role.TRAINER))).thenReturn(createdUser);
         when(trainerRepository.save(any(Trainer.class))).thenAnswer(invocation -> {
             Trainer trainer = invocation.getArgument(0);
             trainer.setId(1L);
@@ -83,7 +83,7 @@ class TrainerServiceImplTest {
         assertThat(savedTrainer.getUser()).isSameAs(user);
         assertThat(savedTrainer.getSpecialization()).isSameAs(yoga);
         verify(trainingTypeRepository).findByName("Yoga");
-        verify(userService).createUser(any(UserCreateDto.class), Role.TRAINER);
+        verify(userService).createUser(any(UserCreateDto.class), eq(Role.TRAINER));
     }
 
     @Test
