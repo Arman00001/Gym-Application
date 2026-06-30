@@ -37,5 +37,6 @@ public interface TraineeMapper {
 
     Trainee mapUpdateToTrainee(TraineeUpdateDto traineeUpdateDto);
 
-    TraineeCreateResponse mapToCreateResponse(User user);
+    @Mapping(target = "password", source = "rawPassword")
+    TraineeCreateResponse mapToCreateResponse(User user, String rawPassword);
 }

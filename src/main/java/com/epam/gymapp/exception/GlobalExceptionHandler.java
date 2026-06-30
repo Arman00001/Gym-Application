@@ -3,6 +3,8 @@ package com.epam.gymapp.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -49,6 +51,17 @@ public class GlobalExceptionHandler {
                 ex.getMessage()
         );
         problem.setTitle("Bad credentials");
+
+        return ResponseEntity.status(problem.getStatus()).body(problem);
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ProblemDetail> handleLockedException(LockedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.LOCKED,
+                ex.getMessage()
+        );
+        problem.setTitle("User locked");
 
         return ResponseEntity.status(problem.getStatus()).body(problem);
     }

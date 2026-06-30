@@ -43,15 +43,10 @@ public class TrainerController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved trainer")
     })
     public ResponseEntity<TrainerDto> get(
-            @PathVariable @NotBlank String username,
-            @RequestParam("password") @NotBlank String password
+            @PathVariable @NotBlank String username
     ) {
-        var auth = new AuthenticationRequestDto();
-        auth.setUsername(username);
-        auth.setPassword(password);
-
         return ResponseEntity
-                .ok(trainerService.getTrainerByUsername(auth));
+                .ok(trainerService.getTrainerByUsername(username));
     }
 
     @GetMapping("/not-assigned/{traineeUsername}")
@@ -83,14 +78,9 @@ public class TrainerController {
     @Operation(summary = "Change Active Status of Trainer")
     @ApiResponse(responseCode = "200", description = "Successfully changed active status of the trainer")
     public ResponseEntity<Void> patch(
-            @PathVariable @NotBlank String username,
-            @RequestParam("password") @NotBlank String password
+            @PathVariable @NotBlank String username
     ) {
-        var auth = new AuthenticationRequestDto();
-        auth.setUsername(username);
-        auth.setPassword(password);
-
-        trainerService.changeIsActiveStatus(auth);
+        trainerService.changeIsActiveStatus(username);
         return ResponseEntity.ok().build();
     }
 }

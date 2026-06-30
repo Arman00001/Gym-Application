@@ -1,5 +1,5 @@
 # Format:
-# USER;id;firstName;lastName;username;password;isActive
+# USER;id;firstName;lastName;username;password;isActive;role
 # TRAINEE;id;userId;dateOfBirth;address
 # TRAINER;id;userId;specialization;trainingTypeId
 # TRAINING_TYPE;id;trainingTypeName
@@ -10,14 +10,14 @@ TRAINING_TYPE;2;Fitness
 TRAINING_TYPE;3;Strength
 TRAINING_TYPE;4;Boxing
 
-USER;1;John;Smith;John.Smith;Pass123456;true
-USER;2;Anna;Brown;Anna.Brown;Qwerty1234;true
-USER;3;John;Smith;John.Smith1;Zxcvb12345;false
-USER;4;Maria;Garcia;Maria.Garcia;Mypass7890;true
-USER;5;Alex;Johnson;Alex.Johnson;Train12345;true
-USER;6;Emma;Wilson;Emma.Wilson;Fitpass789;true
-USER;7;David;Miller;David.Miller;Strong5678;true
-USER;8;Alex;Johnson;Alex.Johnson1;Coach12345;false
+USER;1;John;Smith;John.Smith;Pass123456;true;trainee
+USER;2;Anna;Brown;Anna.Brown;Qwerty1234;true;trainee
+USER;3;John;Smith;John.Smith1;Zxcvb12345;false;trainee
+USER;4;Maria;Garcia;Maria.Garcia;Mypass7890;true;trainee
+USER;5;Alex;Johnson;Alex.Johnson;Train12345;true;trainer
+USER;6;Emma;Wilson;Emma.Wilson;Fitpass789;true;trainer
+USER;7;David;Miller;David.Miller;Strong5678;true;trainer
+USER;8;Alex;Johnson;Alex.Johnson1;Coach12345;false;trainer
 
 TRAINEE;1;1;2000-01-15;New York
 TRAINEE;2;2;1998-05-20;Boston

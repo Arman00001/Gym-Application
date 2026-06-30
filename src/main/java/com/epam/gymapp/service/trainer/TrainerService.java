@@ -12,9 +12,9 @@ public interface TrainerService {
     TrainerDto updateTrainer(TrainerUpdateDto trainerDto);
 
     TrainerDto getTrainerById(Long id);
-    TrainerDto getTrainerByUsername(AuthenticationRequestDto dto);
+    TrainerDto getTrainerByUsername(String username);
     List<TrainerDto> getNotAssignedToTrainee(String username);
     List<TrainingDto> searchTrainings(TrainerTrainingsSearchCriteria criteria);
 
-    TrainerDto changeIsActiveStatus(AuthenticationRequestDto auth);
+    TrainerDto changeIsActiveStatus(String username);
 }

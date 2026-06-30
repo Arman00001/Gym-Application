@@ -3,13 +3,10 @@ package com.epam.gymapp.service.trainer;
 import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.trainer.*;
 import com.epam.gymapp.dto.training.TrainingDto;
+import com.epam.gymapp.dto.user.CreatedUserResult;
 import com.epam.gymapp.dto.user.UserCreateDto;
-import com.epam.gymapp.exception.BadCredentialsException;
 import com.epam.gymapp.exception.ResourceNotFoundException;
-import com.epam.gymapp.persistence.entity.Trainer;
-import com.epam.gymapp.persistence.entity.Training;
-import com.epam.gymapp.persistence.entity.TrainingType;
-import com.epam.gymapp.persistence.entity.User;
+import com.epam.gymapp.persistence.entity.*;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
@@ -66,8 +63,9 @@ class TrainerServiceImplTest {
 
         TrainingType yoga = trainingType(5L, "Yoga");
         User user = user(10L, "Alex", "Brown", "Alex.Brown", "password12", true);
+        CreatedUserResult createdUser = new CreatedUserResult(user,user.getPassword());
         when(trainingTypeRepository.findByName("Yoga")).thenReturn(Optional.of(yoga));
-        when(userService.createUser(any(UserCreateDto.class))).thenReturn(user);
+        when(userService.createUser(any(UserCreateDto.class), Role.TRAINER)).thenReturn(createdUser);
         when(trainerRepository.save(any(Trainer.class))).thenAnswer(invocation -> {
             Trainer trainer = invocation.getArgument(0);
             trainer.setId(1L);
@@ -85,7 +83,7 @@ class TrainerServiceImplTest {
         assertThat(savedTrainer.getUser()).isSameAs(user);
         assertThat(savedTrainer.getSpecialization()).isSameAs(yoga);
         verify(trainingTypeRepository).findByName("Yoga");
-        verify(userService).createUser(any(UserCreateDto.class));
+        verify(userService).createUser(any(UserCreateDto.class), Role.TRAINER);
     }
 
     @Test
@@ -108,12 +106,9 @@ class TrainerServiceImplTest {
         User user = user(10L, "Alex", "Brown", "Alex.Brown", "password12", true);
         TrainingType yoga = trainingType(5L, "Yoga");
         Trainer trainer = trainer(1L, user, yoga);
-        AuthenticationRequestDto auth = auth("Alex.Brown", "password12");
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.of(trainer));
 
-        TrainerDto result = trainerService.getTrainerByUsername(auth);
+        TrainerDto result = trainerService.getTrainerByUsername("Alex.Brown");
 
         assertThat(result.getUsername()).isEqualTo("Alex.Brown");
         assertThat(result.getFirstName()).isEqualTo("Alex");
@@ -121,17 +116,14 @@ class TrainerServiceImplTest {
         assertThat(result.getSpecialization()).isEqualTo("Yoga");
         assertThat(result.getIsActive()).isTrue();
         verify(trainerRepository).getByUsername("Alex.Brown");
-        verify(userService).isAuthenticated("Alex.Brown", "password12");
         verifyNoInteractions(trainingTypeRepository);
     }
 
     @Test
     void getTrainerByUsername_shouldThrowException_whenTrainerProfileDoesNotExist() {
-        AuthenticationRequestDto auth = auth("Alex.Brown", "password12");
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> trainerService.getTrainerByUsername(auth))
+        assertThatThrownBy(() -> trainerService.getTrainerByUsername("Alex.Brown"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainer does not exist");
     }
@@ -151,7 +143,6 @@ class TrainerServiceImplTest {
         TrainingType newType = trainingType(6L, "Fitness");
         Trainer existingTrainer = trainer(1L, user, oldType);
 
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.of(existingTrainer));
         when(trainingTypeRepository.findByName("Fitness")).thenReturn(Optional.of(newType));
         when(trainerRepository.save(any(Trainer.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -170,8 +161,6 @@ class TrainerServiceImplTest {
                         && trainer.getUser().getIsActive().equals(false)
                         && trainer.getSpecialization().getName().equals("Fitness")
         ));
-
-        verify(userService).isAuthenticated("Alex.Brown", "password12");
     }
 
     @Test
@@ -179,7 +168,6 @@ class TrainerServiceImplTest {
         TrainerUpdateDto dto = new TrainerUpdateDto();
         dto.setUsername("Alex.Brown");
         dto.setPassword("password12");
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> trainerService.updateTrainer(dto))
@@ -187,7 +175,6 @@ class TrainerServiceImplTest {
                 .hasMessage("Trainer does not exist");
 
         verify(trainerRepository, never()).save(any());
-        verify(userService).isAuthenticated("Alex.Brown", "password12");
         verifyNoInteractions(trainingTypeRepository);
     }
 
@@ -203,7 +190,6 @@ class TrainerServiceImplTest {
 
         User user = user(10L, "Alex", "Brown", "Alex.Brown", "password12", true);
         Trainer trainer = trainer(1L, user, trainingType(5L, "Yoga"));
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.of(trainer));
         when(trainingTypeRepository.findByName("Missing")).thenReturn(Optional.empty());
 
@@ -238,7 +224,7 @@ class TrainerServiceImplTest {
     }
 
     @Test
-    void searchTrainings_shouldAuthenticateAndDelegateCriteriaToRepository() {
+    void searchTrainings_shouldDelegateCriteriaToRepository() {
         TrainerTrainingsSearchCriteria criteria = new TrainerTrainingsSearchCriteria();
         criteria.setUsername("Alex.Brown");
         criteria.setPassword("password12");
@@ -248,7 +234,6 @@ class TrainerServiceImplTest {
         criteria.setTraineeLastName("Smith");
 
         Training training = training(1L, "Morning Yoga", trainingType(5L, "Yoga"));
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
         when(trainerRepository.getTrainingsByCriteria(criteria)).thenReturn(List.of(training));
 
         List<TrainingDto> result = trainerService.searchTrainings(criteria);
@@ -260,55 +245,20 @@ class TrainerServiceImplTest {
     }
 
     @Test
-    void searchTrainings_shouldThrowException_whenCredentialsAreInvalid() {
-        TrainerTrainingsSearchCriteria criteria = new TrainerTrainingsSearchCriteria();
-        criteria.setUsername("Alex.Brown");
-        criteria.setPassword("bad");
-        when(userService.isAuthenticated("Alex.Brown", "bad")).thenReturn(false);
-
-        assertThatThrownBy(() -> trainerService.searchTrainings(criteria))
-                .isInstanceOf(BadCredentialsException.class)
-                .hasMessage("Incorrect Credentials");
-
-        verify(trainerRepository, never()).getTrainingsByCriteria(any());
-    }
-
-    @Test
-    void changeIsActiveStatus_shouldAuthenticateAndReturnUpdatedTrainer() {
-        AuthenticationRequestDto auth = new AuthenticationRequestDto();
-        auth.setUsername("Alex.Brown");
-        auth.setPassword("password12");
-
+    void changeIsActiveStatus_shouldReturnUpdatedTrainer() {
         User user = user(10L, "Alex", "Brown", "Alex.Brown", "password12", true);
         Trainer trainer = trainer(1L, user, trainingType(5L, "Yoga"));
 
-        when(userService.isAuthenticated("Alex.Brown", "password12")).thenReturn(true);
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.of(trainer));
         when(trainerRepository.save(any(Trainer.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TrainerDto result = trainerService.changeIsActiveStatus(auth);
+        TrainerDto result = trainerService.changeIsActiveStatus("Alex.Brown");
 
         assertThat(result.getUsername()).isEqualTo("Alex.Brown");
         assertThat(result.getIsActive()).isFalse();
 
         verify(trainerRepository).getByUsername("Alex.Brown");
         verify(trainerRepository).save(trainer);
-    }
-
-    @Test
-    void changeIsActiveStatus_shouldThrowException_whenCredentialsAreInvalid() {
-        AuthenticationRequestDto auth = new AuthenticationRequestDto();
-        auth.setUsername("Alex.Brown");
-        auth.setPassword("bad");
-
-        when(userService.isAuthenticated("Alex.Brown", "bad")).thenReturn(false);
-
-        assertThatThrownBy(() -> trainerService.changeIsActiveStatus(auth))
-                .isInstanceOf(BadCredentialsException.class)
-                .hasMessage("Incorrect Credentials");
-
-        verify(trainerRepository, never()).getByUsername(any());
-        verify(trainerRepository, never()).save(any());
     }
 
     private static User user(Long id, String firstName, String lastName, String username, String password, boolean active) {

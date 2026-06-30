@@ -1,17 +1,17 @@
 package com.epam.gymapp.service.user;
 
-import com.epam.gymapp.dto.user.ChangePasswordRequestDto;
-import com.epam.gymapp.dto.user.UserCreateDto;
-import com.epam.gymapp.dto.user.UserUpdateDto;
-import com.epam.gymapp.exception.BadCredentialsException;
+import com.epam.gymapp.dto.user.*;
 import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.UserMapper;
+import com.epam.gymapp.persistence.entity.Role;
 import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.user.UserRepository;
 import com.epam.gymapp.util.PasswordGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +21,7 @@ public class UserServiceImpl implements UserService {
 
     private UserRepository userRepository;
     private PasswordGenerator passwordGenerator;
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     public void setUserRepository(UserRepository userRepository) {
@@ -32,19 +33,29 @@ public class UserServiceImpl implements UserService {
         this.passwordGenerator = passwordGenerator;
     }
 
+    @Autowired
+    public void setPasswordEncoder(PasswordEncoder passwordEncoder){
+        this.passwordEncoder = passwordEncoder;
+    }
+
     @Override
-    public User createUser(UserCreateDto dto) {
+    public CreatedUserResult createUser(UserCreateDto dto, Role role) {
         log.info("Creating user profile for {} {}", dto.getFirstName(), dto.getLastName());
         User user = UserMapper.INSTANCE.userCreateToUser(dto);
 
         user.setUsername(generateUsername(user.getFirstName(), user.getLastName()));
-        user.setPassword(passwordGenerator.generate());
+
+        String rawPassword = passwordGenerator.generate();
+        String hashedPassword = passwordEncoder.encode(rawPassword);
+
+        user.setPassword(hashedPassword);
         user.setIsActive(true);
+        user.setRole(role);
 
         User result = userRepository.save(user);
         log.info("User with username={} created", result.getUsername());
 
-        return result;
+        return new CreatedUserResult(result,rawPassword);
     }
 
     @Override
@@ -87,26 +98,23 @@ public class UserServiceImpl implements UserService {
         return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
-    @Override
-    public boolean isAuthenticated(String username, String password) {
-        return userRepository.existsUserByUsernameAndPassword(username,password);
-//        return userRepository.isAuthenticated(username, password);
-    }
 
     @Override
     public void changePassword(ChangePasswordRequestDto dto) {
-        if(isAuthenticated(dto.getUsername(), dto.getOldPassword())){
-            User user = userRepository.getByUsername(dto.getUsername());
-            user.setPassword(dto.getNewPassword());
-            userRepository.save(user);
+        User user = userRepository.findByUsername(dto.getUsername())
+                .orElseThrow(() -> new BadCredentialsException("Incorrect Credentials"));
+
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Incorrect Credentials");
         }
 
-        throw new BadCredentialsException("Incorrect Credentials");
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
     }
 
     @Override
     public boolean login(String username, String password) {
-        return userRepository.existsUserByUsernameAndPassword(username, password);
+        return true;
     }
 
     private String generateUsername(String firstName, String lastName) {

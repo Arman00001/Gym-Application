@@ -1,11 +1,10 @@
 package com.epam.gymapp.service.trainee;
 
-import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.DeleteRequestDto;
 import com.epam.gymapp.dto.trainee.*;
 import com.epam.gymapp.dto.training.TrainingDto;
+import com.epam.gymapp.dto.user.CreatedUserResult;
 import com.epam.gymapp.dto.user.UserCreateDto;
-import com.epam.gymapp.exception.BadCredentialsException;
 import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.persistence.entity.*;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
@@ -59,7 +58,8 @@ class TraineeServiceImplTest {
         dto.setDateOfBirth(LocalDate.parse("2000-01-01"));
 
         User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
-        when(userService.createUser(any(UserCreateDto.class))).thenReturn(user);
+        CreatedUserResult createdUser = new CreatedUserResult(user,user.getPassword());
+        when(userService.createUser(any(UserCreateDto.class),Role.TRAINEE)).thenReturn(createdUser);
         when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> {
             Trainee trainee = invocation.getArgument(0);
             trainee.setId(1L);
@@ -77,34 +77,29 @@ class TraineeServiceImplTest {
         assertThat(savedTrainee.getUser()).isSameAs(user);
         assertThat(savedTrainee.getDateOfBirth()).isEqualTo(dto.getDateOfBirth());
         assertThat(savedTrainee.getAddress()).isEqualTo("New York");
-        verify(userService).createUser(any(UserCreateDto.class));
+        verify(userService).createUser(any(UserCreateDto.class),Role.TRAINEE);
     }
 
     @Test
     void getTraineeByUsername_shouldReturnDto_whenTraineeExists() {
         User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
         Trainee trainee = trainee(1L, user, "New York", "2000-01-01");
-        AuthenticationRequestDto auth = auth("John.Smith", "password12");
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(trainee));
 
-        TraineeDto result = traineeService.getTraineeByUsername(auth);
+        TraineeDto result = traineeService.getTraineeByUsername("John.Smith");
 
         assertThat(result.getFirstName()).isEqualTo("John");
         assertThat(result.getLastName()).isEqualTo("Smith");
         assertThat(result.getAddress()).isEqualTo("New York");
         assertThat(result.getIsActive()).isTrue();
         verify(traineeRepository).getByUsername("John.Smith");
-        verify(userService).isAuthenticated("John.Smith", "password12");
     }
 
     @Test
     void getTraineeByUsername_shouldThrowException_whenTraineeProfileDoesNotExist() {
-        AuthenticationRequestDto auth = auth("John.Smith", "password12");
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> traineeService.getTraineeByUsername(auth))
+        assertThatThrownBy(() -> traineeService.getTraineeByUsername("John.Smith"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainee does not exist");
     }
@@ -135,7 +130,6 @@ class TraineeServiceImplTest {
 
         User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
         Trainee existing = trainee(1L, user, "Old address", "2000-01-01");
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(existing));
         when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -151,7 +145,6 @@ class TraineeServiceImplTest {
                         && trainee.getAddress().equals("New address")
                         && trainee.getDateOfBirth().equals(LocalDate.parse("2001-01-01"))
         ));
-        verify(userService).isAuthenticated("John.Smith", "password12");
     }
 
     @Test
@@ -160,7 +153,6 @@ class TraineeServiceImplTest {
         dto.setUsername("John.Smith");
         dto.setPassword("password12");
 
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> traineeService.updateTrainee(dto))
@@ -168,7 +160,6 @@ class TraineeServiceImplTest {
                 .hasMessage("Trainee does not exist");
 
         verify(traineeRepository, never()).save(any());
-        verify(userService).isAuthenticated("John.Smith", "password12");
     }
 
     @Test
@@ -176,28 +167,23 @@ class TraineeServiceImplTest {
         DeleteRequestDto dto = new DeleteRequestDto();
         dto.setUsername("John.Smith");
         dto.setPassword("password12");
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
 
         traineeService.deleteTraineeByUsername(dto);
 
         verify(traineeRepository).deleteByUsername("John.Smith");
-        verify(userService).isAuthenticated("John.Smith", "password12");
     }
 
 
 
     @Test
-    void changeIsActiveStatus_shouldAuthenticateAndReturnUpdatedTrainee() {
-        AuthenticationRequestDto auth = auth("John.Smith", "password12");
-
+    void changeIsActiveStatus_shouldReturnUpdatedTrainee() {
         User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
         Trainee trainee = trainee(1L, user, "New York", "2000-01-01");
 
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(trainee));
         when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TraineeDto result = traineeService.changeIsActiveStatus(auth);
+        TraineeDto result = traineeService.changeIsActiveStatus("John.Smith");
 
         assertThat(result.getFirstName()).isEqualTo("John");
         assertThat(result.getIsActive()).isFalse();
@@ -207,21 +193,7 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    void changeIsActiveStatus_shouldThrowException_whenCredentialsAreInvalid() {
-        AuthenticationRequestDto auth = auth("John.Smith", "bad");
-
-        when(userService.isAuthenticated("John.Smith", "bad")).thenReturn(false);
-
-        assertThatThrownBy(() -> traineeService.changeIsActiveStatus(auth))
-                .isInstanceOf(BadCredentialsException.class)
-                .hasMessage("Incorrect Credentials");
-
-        verify(traineeRepository, never()).getByUsername(any());
-        verify(traineeRepository, never()).save(any());
-    }
-
-    @Test
-    void searchTrainings_shouldAuthenticateAndDelegateCriteriaToRepository() {
+    void searchTrainings_shouldDelegateCriteriaToRepository() {
         TraineeTrainingsSearchCriteria criteria = new TraineeTrainingsSearchCriteria();
         criteria.setUsername("John.Smith");
         criteria.setPassword("password12");
@@ -232,7 +204,6 @@ class TraineeServiceImplTest {
         criteria.setTrainingType("Yoga");
 
         Training training = training(1L, "Morning Yoga", trainingType(5L, "Yoga"));
-        when(userService.isAuthenticated("John.Smith", "password12")).thenReturn(true);
         when(traineeRepository.getTrainingsByCriteria(criteria)).thenReturn(List.of(training));
 
         List<TrainingDto> result = traineeService.searchTrainings(criteria);
@@ -241,27 +212,6 @@ class TraineeServiceImplTest {
         assertThat(result.get(0).getName()).isEqualTo("Morning Yoga");
         assertThat(result.get(0).getType().getName()).isEqualTo("Yoga");
         verify(traineeRepository).getTrainingsByCriteria(criteria);
-    }
-
-    @Test
-    void searchTrainings_shouldThrowException_whenCredentialsAreInvalid() {
-        TraineeTrainingsSearchCriteria criteria = new TraineeTrainingsSearchCriteria();
-        criteria.setUsername("John.Smith");
-        criteria.setPassword("bad");
-        when(userService.isAuthenticated("John.Smith", "bad")).thenReturn(false);
-
-        assertThatThrownBy(() -> traineeService.searchTrainings(criteria))
-                .isInstanceOf(BadCredentialsException.class)
-                .hasMessage("Incorrect Credentials");
-
-        verify(traineeRepository, never()).getTrainingsByCriteria(any());
-    }
-
-    private static AuthenticationRequestDto auth(String username, String password) {
-        AuthenticationRequestDto auth = new AuthenticationRequestDto();
-        auth.setUsername(username);
-        auth.setPassword(password);
-        return auth;
     }
 
     private static User user(Long id, String firstName, String lastName, String username, String password, boolean active) {

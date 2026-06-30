@@ -27,6 +27,10 @@ dependencies {
     // Prometheus metrics endpoint
     implementation("io.micrometer:micrometer-registry-prometheus")
 
+    // Spring Security
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("com.auth0:java-jwt:4.5.2")
+
     // PostgreSQL driver
     runtimeOnly("org.postgresql:postgresql")
 
@@ -45,12 +49,13 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok:1.18.46")
     testAnnotationProcessor("org.projectlombok:lombok:1.18.46")
 
-    // Spring Boot tests: JUnit, Mockito, AssertJ, Spring Test
+    // Spring Boot tests: JUnit, Mockito, AssertJ, Spring Test, Secutiry Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
 
-    // Useful if you test controllers with MockMvc / WebMvcTest
+    testImplementation("org.springframework.security:spring-security-test")
+
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

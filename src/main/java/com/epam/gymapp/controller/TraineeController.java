@@ -1,6 +1,5 @@
 package com.epam.gymapp.controller;
 
-import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.DeleteRequestDto;
 import com.epam.gymapp.dto.trainee.TraineeCreateDto;
 import com.epam.gymapp.dto.trainee.TraineeCreateResponse;
@@ -42,15 +41,10 @@ public class TraineeController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved trainee"),
     })
     public ResponseEntity<TraineeDto> get(
-            @PathVariable @NotBlank String username,
-            @RequestParam("password") @NotBlank String password
+            @PathVariable @NotBlank String username
     ) {
-        var auth = new AuthenticationRequestDto();
-        auth.setUsername(username);
-        auth.setPassword(password);
-
         return ResponseEntity
-                .ok(traineeService.getTraineeByUsername(auth));
+                .ok(traineeService.getTraineeByUsername(username));
     }
 
     @PutMapping("/{username}")
@@ -72,14 +66,9 @@ public class TraineeController {
     @Operation(summary = "Change Active Status of Trainee")
     @ApiResponse(responseCode = "200", description = "Successfully changed active status of the trainee")
     public ResponseEntity<Void> patch(
-            @PathVariable @NotBlank String username,
-            @RequestParam("password") @NotBlank String password
+            @PathVariable @NotBlank String username
     ) {
-        var auth = new AuthenticationRequestDto();
-        auth.setUsername(username);
-        auth.setPassword(password);
-
-        traineeService.changeIsActiveStatus(auth);
+        traineeService.changeIsActiveStatus(username);
         return ResponseEntity.ok().build();
     }
 

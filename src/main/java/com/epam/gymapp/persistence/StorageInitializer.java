@@ -1,10 +1,6 @@
 package com.epam.gymapp.persistence;
 
-import com.epam.gymapp.persistence.entity.Trainee;
-import com.epam.gymapp.persistence.entity.Trainer;
-import com.epam.gymapp.persistence.entity.Training;
-import com.epam.gymapp.persistence.entity.TrainingType;
-import com.epam.gymapp.persistence.entity.User;
+import com.epam.gymapp.persistence.entity.*;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
@@ -17,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +36,7 @@ public class StorageInitializer implements ApplicationRunner {
     private final TrainerRepository trainerRepository;
     private final TrainingRepository trainingRepository;
     private final TrainingTypeRepository trainingTypeRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${storage.init.file}")
     private String initFilePath;
@@ -121,7 +119,7 @@ public class StorageInitializer implements ApplicationRunner {
     }
 
     private void parseUser(String[] parts) {
-        validateLength(parts, 7, "USER");
+        validateLength(parts, 8, "USER");
 
         Long fileId = Long.parseLong(parts[1]);
 
@@ -129,8 +127,9 @@ public class StorageInitializer implements ApplicationRunner {
         user.setFirstName(parts[2]);
         user.setLastName(parts[3]);
         user.setUsername(parts[4]);
-        user.setPassword(parts[5]);
+        user.setPassword(passwordEncoder.encode(parts[5]));
         user.setIsActive(Boolean.parseBoolean(parts[6]));
+        user.setRole(Role.parseRole(parts[7]));
 
         user = userRepository.save(user);
         usersByFileId.put(fileId, user);

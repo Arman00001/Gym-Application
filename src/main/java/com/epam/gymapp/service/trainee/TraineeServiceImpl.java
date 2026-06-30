@@ -4,11 +4,12 @@ import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.DeleteRequestDto;
 import com.epam.gymapp.dto.trainee.*;
 import com.epam.gymapp.dto.training.TrainingDto;
-import com.epam.gymapp.exception.BadCredentialsException;
+import com.epam.gymapp.dto.user.CreatedUserResult;
 import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.TraineeMapper;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.mapper.UserMapper;
+import com.epam.gymapp.persistence.entity.Role;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.User;
@@ -18,6 +19,7 @@ import com.epam.gymapp.service.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +56,8 @@ public class TraineeServiceImpl implements TraineeService {
                 traineeCreateDto.getFirstName(),
                 traineeCreateDto.getLastName());
 
-        User user = userService.createUser(UserMapper.INSTANCE.traineeToCreateUser(traineeCreateDto));
+        CreatedUserResult createdUser = userService.createUser(UserMapper.INSTANCE.traineeToCreateUser(traineeCreateDto), Role.TRAINEE);
+        User user = createdUser.user();
 
         Trainee trainee = TraineeMapper.INSTANCE.mapCreateToTrainee(traineeCreateDto);
         trainee.setUser(user);
@@ -63,92 +66,50 @@ public class TraineeServiceImpl implements TraineeService {
 
         log.info("Trainee profile created successfully. username={}", user.getUsername());
 
-        return TraineeMapper.INSTANCE.mapToCreateResponse(user);
+        return TraineeMapper.INSTANCE.mapToCreateResponse(user, createdUser.rawPassword());
     }
 
     @Override
     @Transactional
     public TraineeDto updateTrainee(TraineeUpdateDto dto) {
         log.info("Updating trainee profile. username={}", dto.getUsername());
-        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
-            Trainee existing = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
-                log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
-                return new ResourceNotFoundException("Trainee does not exist");
-            });
+        Trainee existing = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
+            log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
+            return new ResourceNotFoundException("Trainee does not exist");
+        });
 
-            User user = existing.getUser();
-            user.setFirstName(dto.getFirstName());
-            user.setLastName(dto.getLastName());
-            user.setIsActive(dto.getIsActive());
+        User user = existing.getUser();
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setIsActive(dto.getIsActive());
 
-            existing.setDateOfBirth(dto.getDateOfBirth());
-            existing.setAddress(dto.getAddress());
+        existing.setDateOfBirth(dto.getDateOfBirth());
+        existing.setAddress(dto.getAddress());
 
-            Trainee updated = traineeRepository.save(existing);
-            List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(updated.getUser().getUsername());
+        Trainee updated = traineeRepository.save(existing);
+        List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(updated.getUser().getUsername());
 
 
-            log.info("Trainee profile updated successfully. username={}", user.getUsername());
+        log.info("Trainee profile updated successfully. username={}", user.getUsername());
 
-            return TraineeMapper.INSTANCE.mapToFullDto(updated, trainers);
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TraineeMapper.INSTANCE.mapToFullDto(updated, trainers);
     }
-
-//    @Override
-//    @Transactional
-//    public TraineeDto updateTrainerList(TraineeTrainerListUpdateDto dto) {
-//        EntityTransaction transaction = entityManager.getTransaction();
-//        try {
-//            transaction.begin();
-//            if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
-//                Trainee trainee = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
-//                    log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
-//                    return new ResourceNotFoundException("Trainee does not exist");
-//                });
-//                List<Trainer> trainers = trainerRepository.getByUsernames(dto.getTrainerUsernames());
-//                traineeTrainerRepository.updateTrainerList(trainee, trainers);
-//                transaction.commit();
-//
-//                return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
-//            }
-//
-//            throw new BadCredentialsException("Incorrect Credentials");
-//        } catch (Exception e){
-//            if(transaction.isActive()){
-//                transaction.rollback();
-//            }
-//            throw e;
-//        }
-//    }
 
     @Override
     @Transactional
     public void deleteTrainee(DeleteRequestDto dto) {
         log.info("Deleting trainee profile. id={}", dto.getId());
-        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
-            traineeRepository.deleteById(dto.getId());
-            log.info("Trainee profile deleted. id={}", dto.getId());
-            return;
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
-
+        traineeRepository.deleteById(dto.getId());
+        log.info("Trainee profile deleted. id={}", dto.getId());
     }
 
     @Override
     @Transactional
     public void deleteTraineeByUsername(DeleteRequestDto dto) {
         log.info("Deleting trainee profile. username={}", dto.getUsername());
-        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
-            traineeRepository.deleteByUsername(dto.getUsername());
+        traineeRepository.deleteByUsername(dto.getUsername());
 
-            log.info("Trainee profile deleted. username={}", dto.getUsername());
-            return;
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        log.info("Trainee profile deleted. username={}", dto.getUsername());
     }
 
     @Override
@@ -166,46 +127,34 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public TraineeDto getTraineeByUsername(AuthenticationRequestDto dto) {
-        log.info("Getting trainee profile. username={}", dto.getUsername());
-        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
-            Trainee trainee = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
-                log.warn("Trainee profile not found. username={}", dto.getUsername());
-                return new ResourceNotFoundException("Trainee does not exist");
-            });
-            List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(trainee.getUser().getUsername());
+    public TraineeDto getTraineeByUsername(String username) {
+        log.info("Getting trainee profile. username={}", username);
+        Trainee trainee = traineeRepository.getByUsername(username).orElseThrow(() -> {
+            log.warn("Trainee profile not found. username={}", username);
+            return new ResourceNotFoundException("Trainee does not exist");
+        });
+        List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(trainee.getUser().getUsername());
 
-            return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
     }
 
     @Override
     public List<TrainingDto> searchTrainings(TraineeTrainingsSearchCriteria criteria) {
-        if (userService.isAuthenticated(criteria.getUsername(), criteria.getPassword())) {
-            return TrainingMapper.INSTANCE.mapToDtoList(traineeRepository.getTrainingsByCriteria(criteria));
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TrainingMapper.INSTANCE.mapToDtoList(traineeRepository.getTrainingsByCriteria(criteria));
     }
 
     @Override
     @Transactional
-    public TraineeDto changeIsActiveStatus(AuthenticationRequestDto auth) {
-        log.info("Changing active status for: username = {}", auth.getUsername());
-        if (userService.isAuthenticated(auth.getUsername(), auth.getPassword())) {
-            Trainee trainee = traineeRepository.getByUsername(auth.getUsername()).orElseThrow(() -> {
-                log.warn("Cannot update trainee. Trainee not found. username={}", auth.getUsername());
-                return new ResourceNotFoundException("Trainee does not exist");
-            });
-            User user = trainee.getUser();
-            user.setIsActive(!user.getIsActive());
-            traineeRepository.save(trainee);
+    public TraineeDto changeIsActiveStatus(String username) {
+        log.info("Changing active status for: username = {}", username);
+        Trainee trainee = traineeRepository.getByUsername(username).orElseThrow(() -> {
+            log.warn("Cannot update trainee. Trainee not found. username={}", username);
+            return new ResourceNotFoundException("Trainee does not exist");
+        });
+        User user = trainee.getUser();
+        user.setIsActive(!user.getIsActive());
+        traineeRepository.save(trainee);
 
-            return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TraineeMapper.INSTANCE.mapToDto(trainee, trainee.getUser());
     }
 }

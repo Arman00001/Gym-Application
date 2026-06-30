@@ -25,7 +25,8 @@ public interface TrainerMapper {
     @Mapping(target = "specialization", ignore = true)
     Trainer mapUpdateToTrainer(TrainerUpdateDto dto);
 
-    TrainerCreateResponse mapToCreateResponse(User user);
+    @Mapping(target = "password", source = "rawPassword")
+    TrainerCreateResponse mapToCreateResponse(User user, String rawPassword);
 
     default List<TrainerDto> mapToDtoList(List<Trainer> trainers){
         if(trainers == null){

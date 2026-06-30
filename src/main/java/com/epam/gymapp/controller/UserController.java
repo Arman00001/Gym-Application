@@ -1,6 +1,9 @@
 package com.epam.gymapp.controller;
 
+import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.user.ChangePasswordRequestDto;
+import com.epam.gymapp.dto.user.LoginResponse;
+import com.epam.gymapp.service.authentication.AuthenticationService;
 import com.epam.gymapp.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -17,19 +20,15 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final AuthenticationService authenticationService;
 
-    @GetMapping("/{username}/login")
+    @PostMapping("/login")
     @Operation(summary = "Login")
     @ApiResponse(responseCode = "200", description = "Logged in successfully")
-    public ResponseEntity<String> login(
-            @PathVariable @NotBlank String username,
-            @RequestParam("password") @NotBlank String password
+    public ResponseEntity<LoginResponse> login(
+            @RequestBody @Valid AuthenticationRequestDto dto
     ) {
-        if (userService.login(username, password)) {
-            return ResponseEntity.ok("Login successful");
-        }
-
-        return ResponseEntity.status(401).body("Invalid username or password");
+        return ResponseEntity.ok(authenticationService.login(dto));
     }
 
     @PutMapping("/{username}/password")

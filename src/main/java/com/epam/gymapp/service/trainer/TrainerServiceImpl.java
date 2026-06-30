@@ -3,15 +3,12 @@ package com.epam.gymapp.service.trainer;
 import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.trainer.*;
 import com.epam.gymapp.dto.training.TrainingDto;
-import com.epam.gymapp.exception.BadCredentialsException;
+import com.epam.gymapp.dto.user.CreatedUserResult;
 import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.TrainerMapper;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.mapper.UserMapper;
-import com.epam.gymapp.persistence.entity.Trainee;
-import com.epam.gymapp.persistence.entity.Trainer;
-import com.epam.gymapp.persistence.entity.TrainingType;
-import com.epam.gymapp.persistence.entity.User;
+import com.epam.gymapp.persistence.entity.*;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
@@ -19,6 +16,7 @@ import com.epam.gymapp.service.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +42,7 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Autowired
-    public void setTraineeRepository(TraineeRepository traineeRepository){
+    public void setTraineeRepository(TraineeRepository traineeRepository) {
         this.traineeRepository = traineeRepository;
     }
 
@@ -65,7 +63,8 @@ public class TrainerServiceImpl implements TrainerService {
             return new ResourceNotFoundException("Specialization not found");
         });
 
-        User user = userService.createUser(UserMapper.INSTANCE.trainerToCreateUser(dto));
+        CreatedUserResult createdUser = userService.createUser(UserMapper.INSTANCE.trainerToCreateUser(dto), Role.TRAINER);
+        User user = createdUser.user();
 
         Trainer trainer = TrainerMapper.INSTANCE.mapToTrainer(dto);
         trainer.setUser(user);
@@ -74,40 +73,36 @@ public class TrainerServiceImpl implements TrainerService {
         trainerRepository.save(trainer);
         log.info("Trainer profile created successfully. username={}", user.getUsername());
 
-        return TrainerMapper.INSTANCE.mapToCreateResponse(user);
+        return TrainerMapper.INSTANCE.mapToCreateResponse(user, createdUser.rawPassword());
     }
 
     @Override
     @Transactional
     public TrainerDto updateTrainer(TrainerUpdateDto dto) {
         log.info("Updating trainer profile. username={}", dto.getUsername());
-        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
-            Trainer existing = trainerRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
-                log.warn("Cannot update trainer. Trainer not found. username={}", dto.getUsername());
-                return new ResourceNotFoundException("Trainer does not exist");
-            });
+        Trainer existing = trainerRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
+            log.warn("Cannot update trainer. Trainer not found. username={}", dto.getUsername());
+            return new ResourceNotFoundException("Trainer does not exist");
+        });
 
-            User user = existing.getUser();
-            user.setFirstName(dto.getFirstName());
-            user.setLastName(dto.getLastName());
-            user.setIsActive(dto.getIsActive());
+        User user = existing.getUser();
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setIsActive(dto.getIsActive());
 
-            TrainingType specialization = trainingTypeRepository.findByName(dto.getSpecialization()).orElseThrow(() -> {
-                log.warn("Specialization not found. name={}", dto.getSpecialization());
-                return new ResourceNotFoundException("Specialization not found");
-            });
+        TrainingType specialization = trainingTypeRepository.findByName(dto.getSpecialization()).orElseThrow(() -> {
+            log.warn("Specialization not found. name={}", dto.getSpecialization());
+            return new ResourceNotFoundException("Specialization not found");
+        });
 
-            existing.setSpecialization(specialization);
+        existing.setSpecialization(specialization);
 
-            Trainer updatedTrainer = trainerRepository.save(existing);
-            List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(user.getUsername());
+        Trainer updatedTrainer = trainerRepository.save(existing);
+        List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(user.getUsername());
 
-            log.info("Trainer profile updated successfully. username={}", user.getUsername());
+        log.info("Trainer profile updated successfully. username={}", user.getUsername());
 
-            return TrainerMapper.INSTANCE.mapToFullDto(updatedTrainer, trainees);
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TrainerMapper.INSTANCE.mapToFullDto(updatedTrainer, trainees);
     }
 
     @Override
@@ -124,20 +119,16 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public TrainerDto getTrainerByUsername(AuthenticationRequestDto dto) {
-        log.info("Getting trainer profile. username={}", dto.getUsername());
-        if (userService.isAuthenticated(dto.getUsername(), dto.getPassword())) {
-            Trainer trainer = trainerRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
-                log.warn("Trainer profile not found. username={}", dto.getUsername());
-                return new ResourceNotFoundException("Trainer does not exist");
-            });
+    public TrainerDto getTrainerByUsername(String username) {
+        log.info("Getting trainer profile. username={}", username);
+        Trainer trainer = trainerRepository.getByUsername(username).orElseThrow(() -> {
+            log.warn("Trainer profile not found. username={}", username);
+            return new ResourceNotFoundException("Trainer does not exist");
+        });
 
-            List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(trainer.getUser().getUsername());
+        List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(trainer.getUser().getUsername());
 
-            return TrainerMapper.INSTANCE.mapToFullDto(trainer, trainees);
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TrainerMapper.INSTANCE.mapToFullDto(trainer, trainees);
     }
 
     @Override
@@ -150,27 +141,20 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     public List<TrainingDto> searchTrainings(TrainerTrainingsSearchCriteria criteria) {
-        if (userService.isAuthenticated(criteria.getUsername(), criteria.getPassword())) {
-            return TrainingMapper.INSTANCE.mapToDtoList(trainerRepository.getTrainingsByCriteria(criteria));
-        }
-
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TrainingMapper.INSTANCE.mapToDtoList(trainerRepository.getTrainingsByCriteria(criteria));
     }
 
     @Override
-    public TrainerDto changeIsActiveStatus(AuthenticationRequestDto auth) {
-        log.info("Changing active status for: username = {}", auth.getUsername());
-        if (userService.isAuthenticated(auth.getUsername(), auth.getPassword())) {
-            Trainer trainer = trainerRepository.getByUsername(auth.getUsername()).orElseThrow(() -> {
-                log.warn("Cannot update trainer. Trainer not found. username={}", auth.getUsername());
-                return new ResourceNotFoundException("Trainer does not exist");
-            });
-            User user = trainer.getUser();
-            user.setIsActive(!user.getIsActive());
-            trainerRepository.save(trainer);
+    public TrainerDto changeIsActiveStatus(String username) {
+        log.info("Changing active status for: username = {}", username);
+        Trainer trainer = trainerRepository.getByUsername(username).orElseThrow(() -> {
+            log.warn("Cannot update trainer. Trainer not found. username={}", username);
+            return new ResourceNotFoundException("Trainer does not exist");
+        });
+        User user = trainer.getUser();
+        user.setIsActive(!user.getIsActive());
+        trainerRepository.save(trainer);
 
-            return TrainerMapper.INSTANCE.mapToDto(trainer, trainer.getUser(), trainer.getSpecialization());
-        }
-        throw new BadCredentialsException("Incorrect Credentials");
+        return TrainerMapper.INSTANCE.mapToDto(trainer, trainer.getUser(), trainer.getSpecialization());
     }
 }

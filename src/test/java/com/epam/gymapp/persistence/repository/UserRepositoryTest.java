@@ -76,34 +76,6 @@ class UserRepositoryTest {
     }
 
     @Test
-    void existsUserByUsernameAndPassword_shouldReturnTrue_whenUsernameAndPasswordMatch() {
-        userRepository.saveAndFlush(
-                user(null, "John", "Smith", "John.Smith")
-        );
-
-        boolean result = userRepository.existsUserByUsernameAndPassword(
-                "John.Smith",
-                "password12"
-        );
-
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    void existsUserByUsernameAndPassword_shouldReturnFalse_whenPasswordDoesNotMatch() {
-        userRepository.saveAndFlush(
-                user(null, "John", "Smith", "John.Smith")
-        );
-
-        boolean result = userRepository.existsUserByUsernameAndPassword(
-                "John.Smith",
-                "wrongPassword"
-        );
-
-        assertThat(result).isFalse();
-    }
-
-    @Test
     void save_shouldUpdateExistingUser() {
         User saved = userRepository.saveAndFlush(
                 user(null, "John", "Smith", "John.Smith")
@@ -115,42 +87,6 @@ class UserRepositoryTest {
 
         assertThat(updated.getId()).isEqualTo(saved.getId());
         assertThat(updated.getFirstName()).isEqualTo("Johnny");
-    }
-
-    @Test
-    void updatePasswordByUsername_shouldChangePassword_whenOldPasswordMatches() {
-        userRepository.saveAndFlush(
-                user(null, "John", "Smith", "John.Smith")
-        );
-
-        int updatedRows = userRepository.updatePasswordByUsername(
-                "John.Smith",
-                "password12",
-                "newPassword12"
-        );
-
-        assertThat(updatedRows).isEqualTo(1);
-        assertThat(
-                userRepository.existsUserByUsernameAndPassword("John.Smith", "newPassword12")
-        ).isTrue();
-    }
-
-    @Test
-    void updatePasswordByUsername_shouldNotChangePassword_whenOldPasswordDoesNotMatch() {
-        userRepository.saveAndFlush(
-                user(null, "John", "Smith", "John.Smith")
-        );
-
-        int updatedRows = userRepository.updatePasswordByUsername(
-                "John.Smith",
-                "wrongPassword",
-                "newPassword12"
-        );
-
-        assertThat(updatedRows).isZero();
-        assertThat(
-                userRepository.existsUserByUsernameAndPassword("John.Smith", "password12")
-        ).isTrue();
     }
 
     @Test

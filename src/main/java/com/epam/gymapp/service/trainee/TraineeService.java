@@ -16,9 +16,9 @@ public interface TraineeService {
     void deleteTraineeByUsername(DeleteRequestDto dto);
 
     TraineeDto getTraineeById(Long id);
-    TraineeDto getTraineeByUsername(AuthenticationRequestDto dto);
+    TraineeDto getTraineeByUsername(String username);
     List<TrainingDto> searchTrainings(TraineeTrainingsSearchCriteria criteria);
 
-    TraineeDto changeIsActiveStatus(AuthenticationRequestDto auth);
+    TraineeDto changeIsActiveStatus(String username);
 
 }

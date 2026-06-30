@@ -1,5 +1,6 @@
 package com.epam.gymapp.service.user;
 
+import com.epam.gymapp.dto.user.CreatedUserResult;
 import com.epam.gymapp.dto.user.UserCreateDto;
 import com.epam.gymapp.dto.user.UserUpdateDto;
 import com.epam.gymapp.exception.ResourceNotFoundException;
@@ -11,9 +12,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -26,6 +29,9 @@ class UserServiceImplTest {
 
     @Mock
     private PasswordGenerator passwordGenerator;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserServiceImpl userService;
@@ -45,13 +51,14 @@ class UserServiceImplTest {
             return user;
         });
 
-        User result = userService.createUser(dto);
+        CreatedUserResult createdUserResult = userService.createUser(dto, null);
+        User result = createdUserResult.user();
 
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getFirstName()).isEqualTo("John");
         assertThat(result.getLastName()).isEqualTo("Smith");
         assertThat(result.getUsername()).isEqualTo("John.Smith");
-        assertThat(result.getPassword()).isEqualTo("password12");
+        assertThat(createdUserResult.rawPassword()).isEqualTo("password12");
         assertThat(result.getIsActive()).isTrue();
 
         verify(userRepository).existsByUsername("John.Smith");
@@ -71,7 +78,8 @@ class UserServiceImplTest {
 
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        User result = userService.createUser(dto);
+        CreatedUserResult createdUserResult = userService.createUser(dto, null);
+        User result = createdUserResult.user();
 
         assertThat(result.getUsername()).isEqualTo("John.Smith1");
 
@@ -92,7 +100,8 @@ class UserServiceImplTest {
 
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        User result = userService.createUser(dto);
+        CreatedUserResult createdUserResult = userService.createUser(dto, null);
+        User result = createdUserResult.user();
 
         assertThat(result.getUsername()).isEqualTo("John.Smith2");
     }

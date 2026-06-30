@@ -8,4 +8,5 @@ import lombok.Setter;
 public class UserCreateDto {
     private String firstName;
     private String lastName;
+    private String role;
 }
