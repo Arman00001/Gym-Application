@@ -36,7 +36,7 @@ public interface TrainerMapper {
         return trainers.stream()
                 .map(trainer -> mapToDto(trainer, trainer.getUser(), trainer.getSpecialization()))
                 .toList();
-    };
+    }
 
     default TrainerDto mapToFullDto(Trainer trainer, List<Trainee> trainees){
         TrainerDto trainerDto = mapToDto(trainer,trainer.getUser(), trainer.getSpecialization());
