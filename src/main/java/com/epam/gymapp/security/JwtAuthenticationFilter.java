@@ -1,5 +1,6 @@
 package com.epam.gymapp.security;
 
+import com.epam.gymapp.persistence.repository.token.BlacklistedTokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
     private final CustomUserDetailsService userDetailsService;
 
     @Override
@@ -37,6 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(JwtUtil.AUTH_TYPE.length());
+
+        if (blacklistedTokenRepository.existsByToken(token)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (!jwtUtil.isVerified(token)) {
             filterChain.doFilter(request, response);

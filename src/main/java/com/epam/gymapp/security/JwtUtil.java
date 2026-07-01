@@ -54,6 +54,10 @@ public class JwtUtil {
         return this.verifyAndDecode(token).getClaim(ROLES).asArray(String.class);
     }
 
+    public Date getExpirationDate(String token) {
+        return this.verifyAndDecode(token).getExpiresAt();
+    }
+
     public boolean isVerified(String token) {
         try {
             this.verifyAndDecode(token);
@@ -70,4 +74,5 @@ public class JwtUtil {
     private DecodedJWT verifyAndDecode(String token) {
         return JWT.require(this.getAlgorithm()).build().verify(token);
     }
+
 }
