@@ -7,11 +7,13 @@ import com.epam.gymapp.service.authentication.AuthenticationService;
 import com.epam.gymapp.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -33,14 +35,17 @@ public class UserController {
 
     @PutMapping("/{username}/password")
     @Operation(summary = "Change Password")
-    @ApiResponse(responseCode = "200", description = "Password changed successfully")
+    @PreAuthorize("#username == authentication.name OR hasRole('ADMIN')")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password changed successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Bad Credentials"),
+    })
     public ResponseEntity<String> changePassword(
             @PathVariable @NotBlank String username,
             @RequestBody @Valid ChangePasswordRequestDto dto
     ) {
-        dto.setUsername(username);
-
-        userService.changePassword(dto);
+        userService.changePassword(username, dto);
         return ResponseEntity.ok("Password changed successfully");
     }
 }

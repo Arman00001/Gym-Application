@@ -20,22 +20,39 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationServiceImpl implements AuthenticationService{
+public class AuthenticationServiceImpl implements AuthenticationService {
+
+    private static final int MAX_FAILED_ATTEMPTS = 3;
+    private static final int FAILED_ATTEMPT_WINDOW_MINUTES = 5;
+    private static final int BLOCK_DURATION_MINUTES = 5;
 
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
-    @Transactional
+    @Transactional(noRollbackFor = {
+            BadCredentialsException.class,
+            LockedException.class
+    })
     public LoginResponse login(AuthenticationRequestDto dto) {
         User user = userRepository.findByUsername(dto.getUsername())
                 .orElseThrow(() -> new BadCredentialsException("Incorrect Credentials"));
 
+        LocalDateTime now = LocalDateTime.now();
+
         if (user.getBlockedUntil() != null &&
-                user.getBlockedUntil().isAfter(LocalDateTime.now())) {
+                user.getBlockedUntil().isAfter(now)) {
             throw new LockedException("User is blocked for 5 minutes");
         }
+
+        if (user.getBlockedUntil() != null && !user.getBlockedUntil().isAfter(now)) {
+            user.setBlockedUntil(null);
+            user.setFailedLoginAttempts(0);
+            user.setLastFailedLoginAt(null);
+            userRepository.save(user);
+        }
+
 
         try {
             authenticationManager.authenticate(
@@ -46,6 +63,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
             );
 
             user.setFailedLoginAttempts(0);
+            user.setLastFailedLoginAt(null);
             user.setBlockedUntil(null);
             userRepository.save(user);
 
@@ -59,18 +77,40 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                     .build();
 
         } catch (AuthenticationException ex) {
-            int attempts = user.getFailedLoginAttempts() + 1;
-
-            if (attempts >= 3) {
-                user.setFailedLoginAttempts(0);
-                user.setBlockedUntil(LocalDateTime.now().plusMinutes(5));
-            } else {
-                user.setFailedLoginAttempts(attempts);
-            }
-
-            userRepository.save(user);
-
+            handleLoginFailure(user, now);
             throw new BadCredentialsException("Incorrect Credentials");
         }
+    }
+
+    private void handleLoginFailure(User user, LocalDateTime now) {
+        LocalDateTime lastFailedLoginAt = user.getLastFailedLoginAt();
+
+        boolean previousAttemptExpired =
+                lastFailedLoginAt == null ||
+                        lastFailedLoginAt.isBefore(now.minusMinutes(FAILED_ATTEMPT_WINDOW_MINUTES));
+
+        int attempts;
+
+        if (previousAttemptExpired) {
+            attempts = 1;
+        } else {
+            attempts = user.getFailedLoginAttempts() + 1;
+        }
+
+        user.setFailedLoginAttempts(attempts);
+        user.setLastFailedLoginAt(now);
+
+
+        if (attempts >= MAX_FAILED_ATTEMPTS) {
+            user.setFailedLoginAttempts(0);
+            user.setBlockedUntil(now.plusMinutes(BLOCK_DURATION_MINUTES));
+            userRepository.save(user);
+
+            throw new LockedException("User is blocked for 5 minutes");
+        } else {
+            user.setFailedLoginAttempts(attempts);
+        }
+
+        userRepository.save(user);
     }
 }

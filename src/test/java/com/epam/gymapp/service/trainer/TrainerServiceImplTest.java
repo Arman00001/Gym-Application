@@ -63,7 +63,7 @@ class TrainerServiceImplTest {
 
         TrainingType yoga = trainingType(5L, "Yoga");
         User user = user(10L, "Alex", "Brown", "Alex.Brown", "password12", true);
-        CreatedUserResult createdUser = new CreatedUserResult(user,user.getPassword());
+        CreatedUserResult createdUser = new CreatedUserResult(user, user.getPassword());
         when(trainingTypeRepository.findByName("Yoga")).thenReturn(Optional.of(yoga));
         when(userService.createUser(any(UserCreateDto.class), eq(Role.TRAINER))).thenReturn(createdUser);
         when(trainerRepository.save(any(Trainer.class))).thenAnswer(invocation -> {
@@ -131,8 +131,7 @@ class TrainerServiceImplTest {
     @Test
     void updateTrainer_shouldUpdateUserFieldsAndSpecialization() {
         TrainerUpdateDto dto = new TrainerUpdateDto();
-        dto.setUsername("Alex.Brown");
-        dto.setPassword("password12");
+        String username = "Alex.Brown";
         dto.setFirstName("Alexander");
         dto.setLastName("Brown");
         dto.setIsActive(false);
@@ -147,7 +146,7 @@ class TrainerServiceImplTest {
         when(trainingTypeRepository.findByName("Fitness")).thenReturn(Optional.of(newType));
         when(trainerRepository.save(any(Trainer.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TrainerDto result = trainerService.updateTrainer(dto);
+        TrainerDto result = trainerService.updateTrainer(username, dto);
 
         assertThat(result.getFirstName()).isEqualTo("Alexander");
         assertThat(result.getIsActive()).isFalse();
@@ -166,11 +165,11 @@ class TrainerServiceImplTest {
     @Test
     void updateTrainer_shouldThrowException_whenTrainerProfileDoesNotExist() {
         TrainerUpdateDto dto = new TrainerUpdateDto();
-        dto.setUsername("Alex.Brown");
-        dto.setPassword("password12");
+        String username = "Alex.Brown";
+
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> trainerService.updateTrainer(dto))
+        assertThatThrownBy(() -> trainerService.updateTrainer(username, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainer does not exist");
 
@@ -181,8 +180,8 @@ class TrainerServiceImplTest {
     @Test
     void updateTrainer_shouldThrowException_whenSpecializationDoesNotExist() {
         TrainerUpdateDto dto = new TrainerUpdateDto();
-        dto.setUsername("Alex.Brown");
-        dto.setPassword("password12");
+        String username = "Alex.Brown";
+
         dto.setFirstName("Alex");
         dto.setLastName("Brown");
         dto.setIsActive(true);
@@ -193,7 +192,7 @@ class TrainerServiceImplTest {
         when(trainerRepository.getByUsername("Alex.Brown")).thenReturn(Optional.of(trainer));
         when(trainingTypeRepository.findByName("Missing")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> trainerService.updateTrainer(dto))
+        assertThatThrownBy(() -> trainerService.updateTrainer(username, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Specialization not found");
 
@@ -206,7 +205,6 @@ class TrainerServiceImplTest {
         auth.setPassword(password);
         return auth;
     }
-
 
 
     @Test

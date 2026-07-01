@@ -1,6 +1,5 @@
 package com.epam.gymapp.dto.trainer;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,10 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TrainerUpdateDto {
-    @NotBlank
-    private String username;
-    @NotBlank
-    private String password;
     private String firstName;
     private String lastName;
     private Boolean isActive;

@@ -1,6 +1,5 @@
 package com.epam.gymapp.service.trainer;
 
-import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.trainer.*;
 import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.dto.user.CreatedUserResult;
@@ -16,7 +15,6 @@ import com.epam.gymapp.service.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,10 +76,10 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @Transactional
-    public TrainerDto updateTrainer(TrainerUpdateDto dto) {
-        log.info("Updating trainer profile. username={}", dto.getUsername());
-        Trainer existing = trainerRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
-            log.warn("Cannot update trainer. Trainer not found. username={}", dto.getUsername());
+    public TrainerDto updateTrainer(String username, TrainerUpdateDto dto) {
+        log.info("Updating trainer profile. username={}", username);
+        Trainer existing = trainerRepository.getByUsername(username).orElseThrow(() -> {
+            log.warn("Cannot update trainer. Trainer not found. username={}", username);
             return new ResourceNotFoundException("Trainer does not exist");
         });
 

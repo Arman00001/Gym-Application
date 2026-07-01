@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Autowired
-    public void setPasswordEncoder(PasswordEncoder passwordEncoder){
+    public void setPasswordEncoder(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserService {
         User result = userRepository.save(user);
         log.info("User with username={} created", result.getUsername());
 
-        return new CreatedUserResult(result,rawPassword);
+        return new CreatedUserResult(result, rawPassword);
     }
 
     @Override
@@ -100,8 +100,8 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public void changePassword(ChangePasswordRequestDto dto) {
-        User user = userRepository.findByUsername(dto.getUsername())
+    public void changePassword(String username, ChangePasswordRequestDto dto) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BadCredentialsException("Incorrect Credentials"));
 
         if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
@@ -112,10 +112,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    @Override
-    public boolean login(String username, String password) {
-        return true;
-    }
 
     private String generateUsername(String firstName, String lastName) {
         String baseUsername = firstName + "." + lastName;

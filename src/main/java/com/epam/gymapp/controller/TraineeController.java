@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -56,14 +57,13 @@ public class TraineeController {
             @PathVariable @NotBlank String username,
             @RequestBody @Valid TraineeUpdateDto dto
     ) {
-        dto.setUsername(username);
-
         return ResponseEntity
-                .ok(traineeService.updateTrainee(dto));
+                .ok(traineeService.updateTrainee(username, dto));
     }
 
     @PatchMapping("/{username}/is-active")
     @Operation(summary = "Change Active Status of Trainee")
+    @PreAuthorize("#username == authentication.name OR hasRole('ADMIN')")
     @ApiResponse(responseCode = "200", description = "Successfully changed active status of the trainee")
     public ResponseEntity<Void> patch(
             @PathVariable @NotBlank String username
@@ -74,6 +74,7 @@ public class TraineeController {
 
     @DeleteMapping("/{username}")
     @Operation(summary = "Delete Trainee")
+    @PreAuthorize("#username == authentication.name OR hasRole('ADMIN')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully deleted trainee"),
     })

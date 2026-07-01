@@ -1,6 +1,5 @@
 package com.epam.gymapp.dto.trainee;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,10 +8,6 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class TraineeUpdateDto {
-    @NotBlank
-    private String username;
-    @NotBlank
-    private String password;
     private String firstName;
     private String lastName;
     private Boolean isActive;

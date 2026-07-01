@@ -1,6 +1,5 @@
 package com.epam.gymapp.controller;
 
-import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.trainer.TrainerCreateDto;
 import com.epam.gymapp.dto.trainer.TrainerCreateResponse;
 import com.epam.gymapp.dto.trainer.TrainerDto;
@@ -15,6 +14,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -61,6 +61,7 @@ public class TrainerController {
 
     @PutMapping("/{username}")
     @Operation(summary = "Update Trainer")
+    @PreAuthorize("#username == authentication.name OR hasRole('ADMIN')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated trainer"),
     })
@@ -68,14 +69,13 @@ public class TrainerController {
             @PathVariable @NotBlank String username,
             @RequestBody @Valid TrainerUpdateDto dto
     ) {
-        dto.setUsername(username);
-
         return ResponseEntity
-                .ok(trainerService.updateTrainer(dto));
+                .ok(trainerService.updateTrainer(username, dto));
     }
 
     @PatchMapping("/{username}/is-active")
     @Operation(summary = "Change Active Status of Trainer")
+    @PreAuthorize("#username == authentication.name OR hasRole('ADMIN')")
     @ApiResponse(responseCode = "200", description = "Successfully changed active status of the trainer")
     public ResponseEntity<Void> patch(
             @PathVariable @NotBlank String username

@@ -36,6 +36,9 @@ public class User {
     @Column(name = "failed_login_attempts", nullable = false)
     private Integer failedLoginAttempts = 0;
 
+    @Column(name = "last_failed_login_at")
+    private LocalDateTime lastFailedLoginAt;
+
     @Column(name = "blocked_until")
     private LocalDateTime blockedUntil;
 

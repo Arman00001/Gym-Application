@@ -1,6 +1,5 @@
 package com.epam.gymapp.service.trainee;
 
-import com.epam.gymapp.dto.AuthenticationRequestDto;
 import com.epam.gymapp.dto.DeleteRequestDto;
 import com.epam.gymapp.dto.trainee.*;
 import com.epam.gymapp.dto.training.TrainingDto;
@@ -19,7 +18,6 @@ import com.epam.gymapp.service.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,10 +69,10 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional
-    public TraineeDto updateTrainee(TraineeUpdateDto dto) {
-        log.info("Updating trainee profile. username={}", dto.getUsername());
-        Trainee existing = traineeRepository.getByUsername(dto.getUsername()).orElseThrow(() -> {
-            log.warn("Cannot update trainee. Trainee not found. username={}", dto.getUsername());
+    public TraineeDto updateTrainee(String username, TraineeUpdateDto dto) {
+        log.info("Updating trainee profile. username={}", username);
+        Trainee existing = traineeRepository.getByUsername(username).orElseThrow(() -> {
+            log.warn("Cannot update trainee. Trainee not found. username={}", username);
             return new ResourceNotFoundException("Trainee does not exist");
         });
 

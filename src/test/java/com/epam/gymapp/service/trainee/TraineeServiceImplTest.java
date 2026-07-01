@@ -120,8 +120,8 @@ class TraineeServiceImplTest {
     @Test
     void updateTrainee_shouldUpdateUserFieldsAndTraineeProfile() {
         TraineeUpdateDto dto = new TraineeUpdateDto();
-        dto.setUsername("John.Smith");
-        dto.setPassword("password12");
+        String username = "John.Smith";
+
         dto.setFirstName("Johnny");
         dto.setLastName("Smith");
         dto.setIsActive(false);
@@ -133,7 +133,7 @@ class TraineeServiceImplTest {
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.of(existing));
         when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TraineeDto result = traineeService.updateTrainee(dto);
+        TraineeDto result = traineeService.updateTrainee(username, dto);
 
         assertThat(result.getFirstName()).isEqualTo("Johnny");
         assertThat(result.getIsActive()).isFalse();
@@ -150,12 +150,11 @@ class TraineeServiceImplTest {
     @Test
     void updateTrainee_shouldThrowException_whenTraineeProfileDoesNotExist() {
         TraineeUpdateDto dto = new TraineeUpdateDto();
-        dto.setUsername("John.Smith");
-        dto.setPassword("password12");
+        String username = "John.Smith";
 
         when(traineeRepository.getByUsername("John.Smith")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> traineeService.updateTrainee(dto))
+        assertThatThrownBy(() -> traineeService.updateTrainee(username, dto))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainee does not exist");
 

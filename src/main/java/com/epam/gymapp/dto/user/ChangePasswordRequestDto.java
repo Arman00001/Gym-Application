@@ -7,8 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChangePasswordRequestDto {
-    @NotBlank(message = "username should not be blank")
-    private String username;
     @NotBlank(message = "old password should not be blank")
     private String oldPassword;
     @NotBlank(message = "new password should not be blank")

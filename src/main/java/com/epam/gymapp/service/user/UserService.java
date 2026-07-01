@@ -14,6 +14,5 @@ public interface UserService {
     void deleteUser(Long id);
     void deleteUser(User user);
     User getById(Long id);
-    void changePassword(ChangePasswordRequestDto dto);
-    boolean login(String username, String password);
+    void changePassword(String username, ChangePasswordRequestDto dto);
 }
