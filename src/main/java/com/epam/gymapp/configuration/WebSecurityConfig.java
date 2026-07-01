@@ -50,7 +50,8 @@ public class WebSecurityConfig {
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/actuator/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/users/logout").authenticated()
                         .anyRequest().authenticated()
@@ -96,7 +97,8 @@ public class WebSecurityConfig {
                 "http://localhost:8080",
                 "http://localhost:8888",
                 "http://localhost:9090",
-                "http://localhost:9999"
+                "http://localhost:9999",
+                "http://localhost:8081"
         ));
 
         configuration.setAllowedMethods(List.of(
