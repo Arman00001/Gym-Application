@@ -11,8 +11,5 @@ public interface UserService {
     CreatedUserResult createUser(UserCreateDto dto, Role role);
     User getByUsername(String username);
     User updateUser(UserUpdateDto dto);
-    void deleteUser(Long id);
-    void deleteUser(User user);
-    User getById(Long id);
     void changePassword(String username, ChangePasswordRequestDto dto);
 }

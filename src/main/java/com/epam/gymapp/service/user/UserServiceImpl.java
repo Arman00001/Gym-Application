@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User updateUser(UserUpdateDto dto) {
-        User user = userRepository.findById(dto.getId()).orElseThrow(() -> {
+        User user = userRepository.findByUsername(dto.getUsername()).orElseThrow(() -> {
             log.warn("User not found. username={}", dto.getUsername());
             return new ResourceNotFoundException("User does not exist");
         });
@@ -78,26 +78,6 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.save(user);
     }
-
-    @Override
-    public void deleteUser(Long id) {
-        log.info("Deleting user profile by id. id={}", id);
-        userRepository.deleteById(id);
-        log.info("User profile deleted. id={}", id);
-    }
-
-    @Override
-    public void deleteUser(User user) {
-        log.info("Deleting user profile. id={}", user.getId());
-        userRepository.delete(user);
-        log.info("User profile deleted. id={}", user.getId());
-    }
-
-    @Override
-    public User getById(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-    }
-
 
     @Override
     public void changePassword(String username, ChangePasswordRequestDto dto) {
