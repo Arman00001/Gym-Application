@@ -32,7 +32,7 @@ dependencies {
     implementation("com.auth0:java-jwt:4.5.2")
 
     // Dev Tools
-    "developmentOnly"("org.springframework.boot:spring-boot-devtools")
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     // PostgreSQL driver
     runtimeOnly("org.postgresql:postgresql")

@@ -10,10 +10,10 @@ import com.epam.gymapp.persistence.entity.*;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.service.user.UserService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,16 +38,8 @@ class TraineeServiceImplTest {
     @Mock
     private TrainerRepository trainerRepository;
 
+    @InjectMocks
     private TraineeServiceImpl traineeService;
-
-    @BeforeEach
-    void setUp() {
-        traineeService = new TraineeServiceImpl();
-
-        traineeService.setTraineeRepository(traineeRepository);
-        traineeService.setTrainerRepository(trainerRepository);
-        traineeService.setUserService(userService);
-    }
 
     @Test
     void createTrainee_shouldCreateUserAndSaveTraineeProfile() {
@@ -57,27 +49,43 @@ class TraineeServiceImplTest {
         dto.setAddress("New York");
         dto.setDateOfBirth(LocalDate.parse("2000-01-01"));
 
-        User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
-        CreatedUserResult createdUser = new CreatedUserResult(user,user.getPassword());
-        when(userService.createUser(any(UserCreateDto.class),eq(Role.TRAINEE))).thenReturn(createdUser);
-        when(traineeRepository.save(any(Trainee.class))).thenAnswer(invocation -> {
-            Trainee trainee = invocation.getArgument(0);
-            trainee.setId(1L);
-            return trainee;
-        });
+        User user = user(10L, "John", "Smith", "John.Smith", "encodedPassword", true);
+        CreatedUserResult createdUser = new CreatedUserResult(user, "password12");
+
+        when(userService.createUser(any(UserCreateDto.class), eq(Role.TRAINEE)))
+                .thenReturn(createdUser);
+
+        when(traineeRepository.save(any(Trainee.class)))
+                .thenAnswer(invocation -> {
+                    Trainee trainee = invocation.getArgument(0);
+                    trainee.setId(1L);
+                    return trainee;
+                });
 
         TraineeCreateResponse response = traineeService.createTrainee(dto);
 
         assertThat(response.getUsername()).isEqualTo("John.Smith");
         assertThat(response.getPassword()).isEqualTo("password12");
 
+        ArgumentCaptor<UserCreateDto> userCreateDtoCaptor =
+                ArgumentCaptor.forClass(UserCreateDto.class);
+
+        verify(userService).createUser(userCreateDtoCaptor.capture(), eq(Role.TRAINEE));
+
+        UserCreateDto userCreateDto = userCreateDtoCaptor.getValue();
+
+        assertThat(userCreateDto.getFirstName()).isEqualTo("John");
+        assertThat(userCreateDto.getLastName()).isEqualTo("Smith");
+
         ArgumentCaptor<Trainee> traineeCaptor = ArgumentCaptor.forClass(Trainee.class);
+
         verify(traineeRepository).save(traineeCaptor.capture());
+
         Trainee savedTrainee = traineeCaptor.getValue();
+
         assertThat(savedTrainee.getUser()).isSameAs(user);
-        assertThat(savedTrainee.getDateOfBirth()).isEqualTo(dto.getDateOfBirth());
+        assertThat(savedTrainee.getDateOfBirth()).isEqualTo(LocalDate.parse("2000-01-01"));
         assertThat(savedTrainee.getAddress()).isEqualTo("New York");
-        verify(userService).createUser(any(UserCreateDto.class),eq(Role.TRAINEE));
     }
 
     @Test
@@ -102,19 +110,6 @@ class TraineeServiceImplTest {
         assertThatThrownBy(() -> traineeService.getTraineeByUsername("John.Smith"))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Trainee does not exist");
-    }
-
-    @Test
-    void getTraineeById_shouldReturnDto_whenTraineeExists() {
-        User user = user(10L, "John", "Smith", "John.Smith", "password12", true);
-        Trainee trainee = trainee(1L, user, "New York", "2000-01-01T00:00:00Z");
-        when(traineeRepository.findById(1L)).thenReturn(Optional.of(trainee));
-
-        TraineeDto result = traineeService.getTraineeById(1L);
-
-        assertThat(result.getFirstName()).isEqualTo("John");
-        assertThat(result.getAddress()).isEqualTo("New York");
-        verify(traineeRepository).findById(1L);
     }
 
     @Test

@@ -11,10 +11,10 @@ import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.trainingtype.TrainingTypeRepository;
 import com.epam.gymapp.service.user.UserService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -42,17 +42,8 @@ class TrainerServiceImplTest {
     @Mock
     private UserService userService;
 
+    @InjectMocks
     private TrainerServiceImpl trainerService;
-
-    @BeforeEach
-    void setUp() {
-        trainerService = new TrainerServiceImpl();
-
-        trainerService.setTrainerRepository(trainerRepository);
-        trainerService.setTraineeRepository(traineeRepository);
-        trainerService.setTrainingTypeRepository(trainingTypeRepository);
-        trainerService.setUserService(userService);
-    }
 
     @Test
     void createTrainer_shouldCreateUserResolveSpecializationAndSaveTrainerProfile() {

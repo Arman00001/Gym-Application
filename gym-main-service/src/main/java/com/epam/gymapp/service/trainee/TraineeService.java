@@ -11,10 +11,8 @@ public interface TraineeService {
 
     TraineeDto updateTrainee(String username, TraineeUpdateDto traineeCreateDto);
 
-    void deleteTrainee(DeleteRequestDto dto);
     void deleteTraineeByUsername(DeleteRequestDto dto);
 
-    TraineeDto getTraineeById(Long id);
     TraineeDto getTraineeByUsername(String username);
     List<TrainingDto> searchTrainings(TraineeTrainingsSearchCriteria criteria);
 

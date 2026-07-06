@@ -2,6 +2,7 @@ package com.epam.gymapp.service.trainee;
 
 import com.epam.gymapp.dto.DeleteRequestDto;
 import com.epam.gymapp.dto.trainee.*;
+import com.epam.gymapp.dto.trainee.*;
 import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.dto.user.CreatedUserResult;
 import com.epam.gymapp.exception.ResourceNotFoundException;
@@ -95,33 +96,11 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @Transactional
-    public void deleteTrainee(DeleteRequestDto dto) {
-        log.info("Deleting trainee profile. id={}", dto.getId());
-        traineeRepository.deleteById(dto.getId());
-        log.info("Trainee profile deleted. id={}", dto.getId());
-    }
-
-    @Override
-    @Transactional
     public void deleteTraineeByUsername(DeleteRequestDto dto) {
         log.info("Deleting trainee profile. username={}", dto.getUsername());
         traineeRepository.deleteByUsername(dto.getUsername());
 
         log.info("Trainee profile deleted. username={}", dto.getUsername());
-    }
-
-    @Override
-    public TraineeDto getTraineeById(Long id) {
-        log.info("Getting trainee profile. id={}", id);
-
-        Trainee trainee = traineeRepository.findById(id).orElseThrow(() -> {
-            log.warn("Trainee profile not found. id={}", id);
-            return new ResourceNotFoundException("Trainee does not exist");
-        });
-        List<Trainer> trainers = trainerRepository.getAllByTraineeUsername(trainee.getUser().getUsername());
-
-
-        return TraineeMapper.INSTANCE.mapToFullDto(trainee, trainers);
     }
 
     @Override

@@ -11,5 +11,5 @@ public class DeleteRequestDto {
     private String username;
     @NotBlank
     private String password;
-    private Long id;
+//    private Long id;
 }

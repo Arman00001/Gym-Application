@@ -1,6 +1,9 @@
 package com.epam.gymapp.service.user;
 
-import com.epam.gymapp.dto.user.*;
+import com.epam.gymapp.dto.user.ChangePasswordRequestDto;
+import com.epam.gymapp.dto.user.CreatedUserResult;
+import com.epam.gymapp.dto.user.UserCreateDto;
+import com.epam.gymapp.dto.user.UserUpdateDto;
 import com.epam.gymapp.exception.ResourceNotFoundException;
 import com.epam.gymapp.mapper.UserMapper;
 import com.epam.gymapp.persistence.entity.Role;
@@ -67,6 +70,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User updateUser(UserUpdateDto dto) {
+        log.info("Updating user {}", dto.getUsername());
         User user = userRepository.findByUsername(dto.getUsername()).orElseThrow(() -> {
             log.warn("User not found. username={}", dto.getUsername());
             return new ResourceNotFoundException("User does not exist");
@@ -81,8 +85,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void changePassword(String username, ChangePasswordRequestDto dto) {
+        log.info("Changing password for user: {}", username);
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BadCredentialsException("Incorrect Credentials"));
+                .orElseThrow(() -> {
+                    log.warn("No user found with username {}", username);
+                    return new BadCredentialsException("Incorrect Credentials");
+                });
 
         if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
             throw new BadCredentialsException("Incorrect Credentials");
@@ -90,6 +98,7 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         userRepository.save(user);
+        log.info("Password changed successfully for user: {}", username);
     }
 
 
