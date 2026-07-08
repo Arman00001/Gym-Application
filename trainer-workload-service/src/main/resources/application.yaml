@@ -1,0 +1,30 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+server:
+  port: 8081
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+server:
+  port: 8001
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+server:
+  port: 9001
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  port: 9091
+
