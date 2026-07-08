@@ -8,6 +8,7 @@ import com.epam.gymapp.service.trainee.TraineeService;
 import com.epam.gymapp.service.trainer.TrainerService;
 import com.epam.gymapp.service.training.TrainingService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -54,6 +55,14 @@ public class TrainingController {
             @RequestBody @Valid TrainingCreateDto dto
     ) {
         trainingService.createTraining(dto);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete Training")
+    @ApiResponse(responseCode = "200", description = "Deleted Successfully")
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id){
+        trainingService.delete(id);
         return ResponseEntity.ok().build();
     }
 }

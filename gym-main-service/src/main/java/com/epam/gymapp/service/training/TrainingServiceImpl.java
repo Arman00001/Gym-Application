@@ -1,5 +1,7 @@
 package com.epam.gymapp.service.training;
 
+import com.epam.gymapp.dto.trainer.workload.ActionType;
+import com.epam.gymapp.dto.trainer.workload.TrainerActionDto;
 import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.exception.ResourceNotFoundException;
@@ -7,9 +9,11 @@ import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
+import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
+import com.epam.gymapp.util.TrainerWorkloadClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +26,7 @@ public class TrainingServiceImpl implements TrainingService {
     private TrainingRepository trainingRepository;
     private TraineeRepository traineeRepository;
     private TrainerRepository trainerRepository;
+    private TrainerWorkloadClient trainerWorkloadClient;
 
     @Autowired
     public void setTraineeRepository(TraineeRepository traineeRepository) {
@@ -36,6 +41,11 @@ public class TrainingServiceImpl implements TrainingService {
     @Autowired
     public void setTrainingRepository(TrainingRepository trainingRepository) {
         this.trainingRepository = trainingRepository;
+    }
+
+    @Autowired
+    public void setTrainerWorkloadClient(TrainerWorkloadClient trainerWorkloadClient){
+        this.trainerWorkloadClient = trainerWorkloadClient;
     }
 
     @Override
@@ -55,6 +65,14 @@ public class TrainingServiceImpl implements TrainingService {
         training.setTrainer(trainer);
         trainingRepository.save(training);
 
+        User trainerUser = trainer.getUser();
+
+        TrainerActionDto dto = constructTrainerAction(
+                training,
+                trainerUser
+        );
+        trainerWorkloadClient.sendTrainerWorkload(dto);
+
         log.info("Training profile created successfully. Trainee id={}, trainer id = {}",
                 trainee.getId(),
                 trainer.getId()
@@ -73,5 +91,28 @@ public class TrainingServiceImpl implements TrainingService {
         });
 
         return TrainingMapper.INSTANCE.mapToDto(training);
+    }
+
+    @Override
+    public void delete(Long id) {
+        log.info("Deleting training \nid: {}", id);
+        Training training = trainingRepository.removeTrainingById(id);
+        TrainerActionDto dto = constructTrainerAction(training, training.getTrainer().getUser());
+
+        trainerWorkloadClient.sendTrainerWorkload(dto);
+        log.info("Training successfully deleted \nid: {}", id);
+    }
+
+    private TrainerActionDto constructTrainerAction(Training training, User user) {
+        TrainerActionDto dto = new TrainerActionDto();
+        dto.setActionType(ActionType.ADD);
+        dto.setDuration(training.getDuration());
+        dto.setTrainingDate(training.getDate());
+        dto.setUsername(user.getUsername());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setIsActive(user.getIsActive());
+
+        return dto;
     }
 }
