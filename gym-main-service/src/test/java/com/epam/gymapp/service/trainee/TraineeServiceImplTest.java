@@ -189,8 +189,6 @@ class TraineeServiceImplTest {
     @Test
     void searchTrainings_shouldDelegateCriteriaToRepository() {
         TraineeTrainingsSearchCriteria criteria = new TraineeTrainingsSearchCriteria();
-        criteria.setUsername("John.Smith");
-        criteria.setPassword("password12");
         criteria.setFromDate(LocalDate.parse("2026-05-01"));
         criteria.setToDate(LocalDate.parse("2026-05-31"));
         criteria.setTrainerFirstName("Alex");
@@ -198,14 +196,14 @@ class TraineeServiceImplTest {
         criteria.setTrainingType("Yoga");
 
         Training training = training(1L, "Morning Yoga", trainingType(5L, "Yoga"));
-        when(traineeRepository.getTrainingsByCriteria(criteria)).thenReturn(List.of(training));
+        when(traineeRepository.getTrainingsByCriteria(criteria,"John.Smith")).thenReturn(List.of(training));
 
-        List<TrainingDto> result = traineeService.searchTrainings(criteria);
+        List<TrainingDto> result = traineeService.searchTrainings(criteria, "John.Smith");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Morning Yoga");
         assertThat(result.get(0).getType().getName()).isEqualTo("Yoga");
-        verify(traineeRepository).getTrainingsByCriteria(criteria);
+        verify(traineeRepository).getTrainingsByCriteria(criteria, "John.Smith");
     }
 
     private static User user(Long id, String firstName, String lastName, String username, String password, boolean active) {

@@ -18,6 +18,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Default implementation of {@link UserService}.
+ *
+ * <p>
+ * This implementation handles user creation, retrieval, profile updates, and password
+ * changes. During user creation a unique username is generated,
+ * as well as a random password. The password is then encoded. The user is assigned
+ * the provided role, is marked active and saved to the database.
+ * </p>
+ */
 @Service
 public class UserServiceImpl implements UserService {
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
@@ -41,6 +51,14 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Creates a user with a generated unique username and initial raw password.
+     *
+     * <p>
+     * The raw password is returned only in the creation result, while the encoded
+     * password is stored in the database.
+     * </p>
+     */
     @Override
     public CreatedUserResult createUser(UserCreateDto dto, Role role) {
         log.info("Creating user profile for {} {}", dto.getFirstName(), dto.getLastName());
@@ -83,6 +101,11 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Validates the old password before encoding and saving the new password.
+     *
+     * @throws BadCredentialsException if the user does not exist or the old password is incorrect
+     */
     @Override
     public void changePassword(String username, ChangePasswordRequestDto dto) {
         log.info("Changing password for user: {}", username);
@@ -101,7 +124,19 @@ public class UserServiceImpl implements UserService {
         log.info("Password changed successfully for user: {}", username);
     }
 
-
+    /**
+     * Generate a unique username based on the user's first and last name.
+     *
+     * <p>
+     * The initial username is created in the form {@code firstName.lastName}.
+     * If that username already exists, a numeric suffix is appended and incremented
+     * until a unique username is found.
+     * </p>
+     *
+     * @param firstName the user's first name
+     * @param lastName  the user's last name
+     * @return a unique username
+     */
     private String generateUsername(String firstName, String lastName) {
         String baseUsername = firstName + "." + lastName;
 

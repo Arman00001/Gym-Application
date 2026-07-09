@@ -5,11 +5,20 @@ import com.epam.gymapp.persistence.entity.Trainer;
 import com.epam.gymapp.persistence.entity.Training;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for accessing and managing {@link Trainer} entities.
+ *
+ * <p>
+ * Provides custom queries for retrieving trainers by username, finding trainers
+ * not assigned to a trainee, and searching trainer trainings by criteria.
+ * </p>
+ */
 @Repository
 public interface TrainerRepository extends JpaRepository<Trainer,Long> {
     @Query("SELECT t FROM Trainer t WHERE t.user.username = :username")
@@ -23,15 +32,17 @@ public interface TrainerRepository extends JpaRepository<Trainer,Long> {
     List<Trainer> getNotAssignedToTrainee(String username);
 
     @Query("""
-        SELECT training
-        FROM Training training
-        WHERE training.trainer.user.username = :username
-        AND (:firstName IS NULL OR LOWER(training.trainee.user.firstName) LIKE LOWER(CONCAT('%',CAST(:firstName AS string),'%')))
-        AND (:lastName IS NULL OR LOWER(training.trainee.user.lastName) LIKE LOWER(CONCAT('%',CAST(:lastName AS string),'%')))
-        AND (:fromDate IS NULL OR training.date >= :fromDate)
-        AND (:toDate IS NULL OR training.date <= :toDate)""")
-    List<Training> getTrainingsByCriteria(TrainerTrainingsSearchCriteria criteria);
-
+    SELECT training
+    FROM Training training
+    WHERE training.trainer.user.username = :username
+    AND (:#{#criteria.traineeFirstName} IS NULL OR LOWER(training.trainee.user.firstName) LIKE LOWER(CONCAT('%', :#{#criteria.traineeFirstName}, '%')))
+    AND (:#{#criteria.traineeLastName} IS NULL OR LOWER(training.trainee.user.lastName) LIKE LOWER(CONCAT('%', :#{#criteria.traineeLastName}, '%')))
+    AND (:#{#criteria.fromDate} IS NULL OR training.date >= :#{#criteria.fromDate})
+    AND (:#{#criteria.toDate} IS NULL OR training.date <= :#{#criteria.toDate})""")
+    List<Training> getTrainingsByCriteria(
+            @Param("criteria") TrainerTrainingsSearchCriteria criteria,
+            @Param("username") String username
+    );
 
     @Query("SELECT t FROM Trainer t WHERE t.user.username IN :trainerUsernames")
     List<Trainer> getByUsernames(List<String> trainerUsernames);

@@ -15,6 +15,15 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Default implementation of {@link TrainingTypeService}.
+ *
+ * <p>
+ * This implementation manages training type persistence using
+ * {@link TrainingTypeRepository} and maps training type entities to DTOs
+ * using {@link TrainingTypeMapper}.
+ * </p>
+ */
 @Service
 public class TrainingTypeServiceImpl implements TrainingTypeService {
     private static final Logger log = LoggerFactory.getLogger(TrainingTypeServiceImpl.class);
@@ -27,7 +36,7 @@ public class TrainingTypeServiceImpl implements TrainingTypeService {
 
     @Override
     @Transactional
-    public TrainingTypeCreateResponse createTrainee(TrainingTypeCreateDto trainingTypeCreateDto) {
+    public TrainingTypeCreateResponse createTrainingType(TrainingTypeCreateDto trainingTypeCreateDto) {
         log.info("Creating training type {}",
                 trainingTypeCreateDto.getName());
         TrainingType trainingType = TrainingTypeMapper.INSTANCE.mapCreateToTrainingType(trainingTypeCreateDto);

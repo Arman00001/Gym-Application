@@ -9,6 +9,9 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
+/**
+ * Mapper for converting between {@link Training} entities and training DTOs.
+ */
 @Mapper
 public interface TrainingMapper {
     TrainingMapper INSTANCE = Mappers.getMapper(TrainingMapper.class);

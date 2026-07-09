@@ -215,22 +215,20 @@ class TrainerServiceImplTest {
     @Test
     void searchTrainings_shouldDelegateCriteriaToRepository() {
         TrainerTrainingsSearchCriteria criteria = new TrainerTrainingsSearchCriteria();
-        criteria.setUsername("Alex.Brown");
-        criteria.setPassword("password12");
         criteria.setFromDate(LocalDate.parse("2026-05-01"));
         criteria.setToDate(LocalDate.parse("2026-05-31"));
         criteria.setTraineeFirstName("John");
         criteria.setTraineeLastName("Smith");
 
         Training training = training(1L, "Morning Yoga", trainingType(5L, "Yoga"));
-        when(trainerRepository.getTrainingsByCriteria(criteria)).thenReturn(List.of(training));
+        when(trainerRepository.getTrainingsByCriteria(criteria, "Alex.Brown")).thenReturn(List.of(training));
 
-        List<TrainingDto> result = trainerService.searchTrainings(criteria);
+        List<TrainingDto> result = trainerService.searchTrainings(criteria, "Alex.Brown");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Morning Yoga");
         assertThat(result.get(0).getType().getName()).isEqualTo("Yoga");
-        verify(trainerRepository).getTrainingsByCriteria(criteria);
+        verify(trainerRepository).getTrainingsByCriteria(criteria, "Alex.Brown");
     }
 
     @Test

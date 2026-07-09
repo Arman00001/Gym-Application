@@ -12,6 +12,14 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.function.LongSupplier;
 
+/**
+ * Configuration for registering Gym entity count metrics.
+ *
+ * <p>
+ * Registers Micrometer gauges that expose the total number of users, trainees,
+ * trainers, trainings, and training types.
+ * </p>
+ */
 @Configuration
 public class GymEntityMetricsConfiguration {
 
@@ -46,6 +54,12 @@ public class GymEntityMetricsConfiguration {
         };
     }
 
+    /**
+     * Safely retrieves an entity count for a gauge.
+     *
+     * @param supplier the count supplier
+     * @return the entity count, or {@code -1} if the count cannot be retrieved
+     */
     private static double safeCount(LongSupplier supplier) {
         try {
             return supplier.getAsLong();

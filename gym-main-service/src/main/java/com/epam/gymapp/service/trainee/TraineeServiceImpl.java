@@ -24,6 +24,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Default implementation of {@link TraineeService}.
+ *
+ * <p>
+ * This implementation manages trainee profiles using {@link TraineeRepository}.
+ * It creates the associated user account through {@link UserService}, retrieves
+ * assigned trainers through {@link TrainerRepository}, and maps trainee entities
+ * to DTOs using {@link TraineeMapper}.
+ * </p>
+ */
 @Service
 public class TraineeServiceImpl implements TraineeService {
     private static final Logger log = LoggerFactory.getLogger(TraineeServiceImpl.class);
@@ -116,8 +126,9 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public List<TrainingDto> searchTrainings(TraineeTrainingsSearchCriteria criteria) {
-        return TrainingMapper.INSTANCE.mapToDtoList(traineeRepository.getTrainingsByCriteria(criteria));
+    public List<TrainingDto> searchTrainings(TraineeTrainingsSearchCriteria criteria, String username) {
+        log.info("Searching trainee trainings using criteria");
+        return TrainingMapper.INSTANCE.mapToDtoList(traineeRepository.getTrainingsByCriteria(criteria, username));
     }
 
     @Override

@@ -6,6 +6,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * Repository for accessing and managing {@link TrainingType} entities.
+ */
 @Repository
 public interface TrainingTypeRepository extends JpaRepository<TrainingType, Long> {
     Optional<TrainingType> findByName(String name);

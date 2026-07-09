@@ -9,6 +9,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
+/**
+ * Health indicator that checks database connectivity.
+ *
+ * <p>
+ * Executes a simple {@code SELECT 1} query against the configured data source
+ * and reports the database status through Spring Boot Actuator health checks.
+ * </p>
+ */
 @Component
 public class DatabaseHealthIndicator implements HealthIndicator {
 

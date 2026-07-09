@@ -15,13 +15,29 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+/**
+ * Default implementation of {@link TrainerWorkloadService}.
+ *
+ * <p>
+ * This implementation stores monthly trainer workload summaries using
+ * {@link TrainerWorkloadRepository}. It creates a new monthly workload record
+ * when an add action is received for a trainer/month combination that does not
+ * yet exist.
+ * </p>
+ *
+ * <p>
+ * Add actions increase the monthly training duration summary. Delete actions
+ * decrease it and remove the workload record when the summary duration becomes
+ * zero.
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 public class TrainerWorkloadServiceImpl implements TrainerWorkloadService {
 
-    private final TrainerWorkloadRepository trainerWorkloadRepository;
     private static final Logger log = LoggerFactory.getLogger(TrainerWorkloadServiceImpl.class);
 
+    private final TrainerWorkloadRepository trainerWorkloadRepository;
 
     @Override
     @Transactional
@@ -85,7 +101,7 @@ public class TrainerWorkloadServiceImpl implements TrainerWorkloadService {
     @Transactional(readOnly = true)
     public TrainerWorkloadDto getTrainerWorkload(String username, Integer year, Integer month) {
         TrainerWorkload trainerWorkload = trainerWorkloadRepository.findByUsernameAndYearAndMonth(username, year, month)
-                .orElseThrow(() -> new EntityNotFoundException("Not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Trainer workload not found"));
         return TrainerWorkloadMapper.INSTANCE.mapToDto(trainerWorkload);
     }
 

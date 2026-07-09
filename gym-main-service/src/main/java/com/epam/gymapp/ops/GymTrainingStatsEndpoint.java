@@ -9,6 +9,14 @@ import org.springframework.stereotype.Component;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Custom Actuator endpoint that exposes training statistics.
+ *
+ * <p>
+ * Provides aggregated training data such as total trainings, total duration,
+ * average duration, and the number of trainings with invalid duration values.
+ * </p>
+ */
 @Component
 @Endpoint(id = "gym-training-stats")
 public class GymTrainingStatsEndpoint {
@@ -19,6 +27,12 @@ public class GymTrainingStatsEndpoint {
         this.trainingRepository = trainingRepository;
     }
 
+    /**
+     * Returns aggregated training statistics.
+     *
+     * @return a map containing total trainings, total duration, average duration,
+     * and invalid duration count
+     */
     @ReadOperation
     public Map<String, Object> trainingStats() {
         var trainings = trainingRepository.findAll();

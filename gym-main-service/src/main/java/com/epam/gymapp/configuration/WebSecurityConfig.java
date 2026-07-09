@@ -29,6 +29,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Spring Security configuration for the application.
+ *
+ * <p>
+ * Configures stateless JWT-based authentication, public endpoints, protected
+ * endpoints, logout handling, password encoding, and CORS settings.
+ * </p>
+ *
+ * <p>
+ * The application does not use HTTP sessions for authentication. Instead, JWT
+ * authentication is handled by {@link JwtAuthenticationFilter}, and logout is
+ * handled by blacklisting tokens through {@link JwtLogoutHandler}.
+ * </p>
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -39,6 +53,19 @@ public class WebSecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtLogoutHandler jwtLogoutHandler;
 
+    /**
+     * Builds the application security filter chain.
+     *
+     * <p>
+     * Allows unauthenticated access to registration, login, Swagger, and Actuator
+     * endpoints. All other endpoints require authentication. JWT authentication is
+     * applied before Spring Security's username/password authentication filter.
+     * </p>
+     *
+     * @param httpSecurity the HTTP security configuration
+     * @return the configured security filter chain
+     * @throws Exception if the security filter chain cannot be built
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
@@ -72,6 +99,11 @@ public class WebSecurityConfig {
                 .build();
     }
 
+    /**
+     * Provides the authentication provider used for username and password authentication.
+     *
+     * @return a DAO authentication provider using the custom user details service and password encoder
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authenticationProvider =
@@ -89,11 +121,21 @@ public class WebSecurityConfig {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
+    /**
+     * Provides the password encoder used for storing and validating user passwords.
+     *
+     * @return a BCrypt password encoder
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Configures Cross-Origin Resource Sharing settings for the application.
+     *
+     * @return the configured CORS configuration source
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

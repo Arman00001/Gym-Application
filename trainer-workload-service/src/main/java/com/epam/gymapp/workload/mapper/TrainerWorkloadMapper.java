@@ -7,6 +7,14 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
+/**
+ * Mapper for converting trainer workload DTOs and entities.
+ *
+ * <p>
+ * Converts incoming trainer action data into trainer workload entities and
+ * maps trainer workload entities to response DTOs.
+ * </p>
+ */
 @Mapper
 public interface TrainerWorkloadMapper {
     TrainerWorkloadMapper INSTANCE = Mappers.getMapper(TrainerWorkloadMapper.class);
@@ -17,7 +25,7 @@ public interface TrainerWorkloadMapper {
     @Mapping(source = "isActive", target = "status")
     TrainerWorkload mapToWorkload(TrainerActionDto dto);
 
-    default TrainerWorkload mapToFullWorkload(TrainerActionDto dto){
+    default TrainerWorkload mapToFullWorkload(TrainerActionDto dto) {
         TrainerWorkload trainerWorkload = mapToWorkload(dto);
         trainerWorkload.setYear(dto.getTrainingDate().getYear());
         trainerWorkload.setMonth(dto.getTrainingDate().getMonthValue());

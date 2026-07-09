@@ -19,6 +19,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+/**
+ * Default implementation of {@link TrainingService}.
+ *
+ * <p>
+ * This implementation manages training persistence using {@link TrainingRepository}.
+ * During training creation and deletion, it also sends trainer workload updates
+ * through {@link TrainerWorkloadClient}.
+ * </p>
+ */
 @Service
 public class TrainingServiceImpl implements TrainingService {
     private static final Logger log = LoggerFactory.getLogger(TrainingServiceImpl.class);
@@ -44,7 +53,7 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Autowired
-    public void setTrainerWorkloadClient(TrainerWorkloadClient trainerWorkloadClient){
+    public void setTrainerWorkloadClient(TrainerWorkloadClient trainerWorkloadClient) {
         this.trainerWorkloadClient = trainerWorkloadClient;
     }
 
@@ -69,7 +78,8 @@ public class TrainingServiceImpl implements TrainingService {
 
         TrainerActionDto dto = constructTrainerAction(
                 training,
-                trainerUser
+                trainerUser,
+                ActionType.ADD
         );
         trainerWorkloadClient.sendTrainerWorkload(dto);
 
@@ -96,16 +106,28 @@ public class TrainingServiceImpl implements TrainingService {
     @Override
     public void delete(Long id) {
         log.info("Deleting training \nid: {}", id);
-        Training training = trainingRepository.removeTrainingById(id);
-        TrainerActionDto dto = constructTrainerAction(training, training.getTrainer().getUser());
+        Training training = trainingRepository.deleteTrainingById(id);
+        TrainerActionDto dto = constructTrainerAction(training, training.getTrainer().getUser(), ActionType.DELETE);
 
         trainerWorkloadClient.sendTrainerWorkload(dto);
         log.info("Training successfully deleted \nid: {}", id);
     }
 
-    private TrainerActionDto constructTrainerAction(Training training, User user) {
+    /**
+     * Creates a trainer workload action DTO from the given training and trainer user.
+     *
+     * @param training   the training used to provide the date and duration
+     * @param user       the trainer user whose workload should be updated
+     * @param actionType the type of workload action to perform
+     * @return the trainer workload action DTO
+     */
+    private TrainerActionDto constructTrainerAction(
+            Training training,
+            User user,
+            ActionType actionType
+    ) {
         TrainerActionDto dto = new TrainerActionDto();
-        dto.setActionType(ActionType.ADD);
+        dto.setActionType(actionType);
         dto.setDuration(training.getDuration());
         dto.setTrainingDate(training.getDate());
         dto.setUsername(user.getUsername());

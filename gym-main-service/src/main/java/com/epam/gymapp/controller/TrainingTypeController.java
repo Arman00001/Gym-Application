@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/training-types", produces = {"application/JSON"})
+@RequestMapping(value = "/training-types", produces = {"application/json"})
 @Tag(name = "Training Types", description = "Operations for retrieving training types in the application")
 @RequiredArgsConstructor
 public class TrainingTypeController {

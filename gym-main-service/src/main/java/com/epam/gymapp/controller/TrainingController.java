@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/trainings", produces = {"application/JSON"})
-@Tag(name = "Trainings", description = "Operations for creating, updating, retrieving and deleting trainings in the application")
+@RequestMapping(value = "/trainings", produces = {"application/json"})
+@Tag(name = "Trainings", description = "Operations for creating, retrieving and deleting trainings in the application")
 @RequiredArgsConstructor
 public class TrainingController {
     private final TrainingService trainingService;
@@ -33,9 +33,7 @@ public class TrainingController {
             @PathVariable @NotBlank String username,
             @ModelAttribute @Valid TraineeTrainingsSearchCriteria criteria
     ) {
-        criteria.setUsername(username);
-
-        return ResponseEntity.ok(traineeService.searchTrainings(criteria));
+        return ResponseEntity.ok(traineeService.searchTrainings(criteria, username));
     }
 
     @GetMapping("/trainers/{username}")
@@ -44,9 +42,7 @@ public class TrainingController {
             @PathVariable @NotBlank String username,
             @ModelAttribute @Valid TrainerTrainingsSearchCriteria criteria
     ) {
-        criteria.setUsername(username);
-
-        return ResponseEntity.ok(trainerService.searchTrainings(criteria));
+        return ResponseEntity.ok(trainerService.searchTrainings(criteria, username));
     }
 
     @PostMapping

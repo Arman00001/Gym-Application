@@ -10,6 +10,9 @@ import com.epam.gymapp.persistence.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
 
+/**
+ * Mapper for converting trainee and trainer DTOs into user DTOs and user entities.
+ */
 @Mapper
 public interface UserMapper {
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);

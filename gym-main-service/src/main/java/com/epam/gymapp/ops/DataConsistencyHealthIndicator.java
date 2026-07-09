@@ -7,6 +7,15 @@ import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
 
+/**
+ * Health indicator that checks basic user/profile data consistency.
+ *
+ * <p>
+ * Compares the total number of users with the combined number of trainee and
+ * trainer profiles. The health status is reported as down when these counts
+ * do not match.
+ * </p>
+ */
 @Component
 public class DataConsistencyHealthIndicator implements HealthIndicator {
 

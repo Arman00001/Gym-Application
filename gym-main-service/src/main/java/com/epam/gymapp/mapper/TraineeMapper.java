@@ -10,6 +10,13 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.List;
 
+/**
+ * Mapper for converting between {@link Trainee} entities and trainee DTOs.
+ *
+ * <p>
+ * Includes custom mapping logic for building trainee DTOs with assigned trainers.
+ * </p>
+ */
 @Mapper
 public interface TraineeMapper {
     TraineeMapper INSTANCE = Mappers.getMapper(TraineeMapper.class);
@@ -19,8 +26,8 @@ public interface TraineeMapper {
     @Mapping(target = "trainers", ignore = true)
     TraineeDto mapToDto(Trainee trainee, User user);
 
-    default TraineeDto mapToFullDto(Trainee trainee, List<Trainer> trainers){
-        TraineeDto traineeDto = mapToDto(trainee,trainee.getUser());
+    default TraineeDto mapToFullDto(Trainee trainee, List<Trainer> trainers) {
+        TraineeDto traineeDto = mapToDto(trainee, trainee.getUser());
 
         traineeDto.setTrainers(
                 trainers.stream().map(trainer -> {

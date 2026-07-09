@@ -20,6 +20,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Default implementation of {@link TrainerService}.
+ *
+ * <p>
+ * This implementation manages trainer profiles using {@link TrainerRepository}.
+ * It creates the associated user account through {@link UserService}, resolves
+ * trainer specializations through {@link TrainingTypeRepository}, and maps trainer
+ * entities to DTOs using {@link TrainerMapper}.
+ * </p>
+ */
 @Service
 public class TrainerServiceImpl implements TrainerService {
     private static final Logger log = LoggerFactory.getLogger(TrainerServiceImpl.class);
@@ -104,19 +114,6 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public TrainerDto getTrainerById(Long id) {
-        log.info("Getting trainer profile. id={}", id);
-
-        Trainer trainer = trainerRepository.findById(id).orElseThrow(() -> {
-            log.warn("Trainer profile not found. id={}", id);
-            return new ResourceNotFoundException("Trainer does not exist");
-        });
-        List<Trainee> trainees = traineeRepository.getAllByTrainerUsername(trainer.getUser().getUsername());
-
-        return TrainerMapper.INSTANCE.mapToFullDto(trainer, trainees);
-    }
-
-    @Override
     public TrainerDto getTrainerByUsername(String username) {
         log.info("Getting trainer profile. username={}", username);
         Trainer trainer = trainerRepository.getByUsername(username).orElseThrow(() -> {
@@ -138,11 +135,13 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public List<TrainingDto> searchTrainings(TrainerTrainingsSearchCriteria criteria) {
-        return TrainingMapper.INSTANCE.mapToDtoList(trainerRepository.getTrainingsByCriteria(criteria));
+    public List<TrainingDto> searchTrainings(TrainerTrainingsSearchCriteria criteria, String username) {
+        log.info("Searching trainer trainings using criteria");
+        return TrainingMapper.INSTANCE.mapToDtoList(trainerRepository.getTrainingsByCriteria(criteria, username));
     }
 
     @Override
+    @Transactional
     public TrainerDto changeIsActiveStatus(String username) {
         log.info("Changing active status for: username = {}", username);
         Trainer trainer = trainerRepository.getByUsername(username).orElseThrow(() -> {

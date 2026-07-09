@@ -17,7 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(value = "/users", produces = {"application/JSON"})
+@RequestMapping(value = "/users", produces = {"application/json"})
 @Tag(name = "Users", description = "Operations for logging in the user, changing credentials in the application")
 @RequiredArgsConstructor
 public class UserController {

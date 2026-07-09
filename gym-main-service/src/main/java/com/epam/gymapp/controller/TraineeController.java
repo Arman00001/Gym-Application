@@ -19,7 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(value = "/trainees", produces = {"application/JSON"})
+@RequestMapping(value = "/trainees", produces = {"application/json"})
 @Tag(name = "Trainees", description = "Operations for creating, updating, retrieving and deleting trainees in the application")
 @RequiredArgsConstructor
 public class TraineeController {

@@ -13,6 +13,19 @@ import org.springframework.stereotype.Component;
 
 import java.time.ZoneId;
 
+/**
+ * Logout handler which is responsible for invalidating JWT access tokens
+ *
+ * <p>
+ *     When a logout request contains a valid Authorization header with a verified JWT,
+ *     this handler stores the token in a blacklist. The token will remain there until
+ *     its expiration date.
+ * </p>
+ * <p>
+ *     If the Authorization header is missing, has an unsupported authentication type,
+ *     contains an invalid token, or the token is already blacklisted, no action is performed.
+ * </p>
+ * */
 @Component
 @RequiredArgsConstructor
 public class JwtLogoutHandler implements LogoutHandler {
@@ -20,6 +33,18 @@ public class JwtLogoutHandler implements LogoutHandler {
     private final JwtUtil jwtUtil;
     private final BlacklistedTokenRepository blacklistedTokenRepository;
 
+    /**
+     * Extracts the JWT from the Authorization header, verifies it, and stores it in a blacklist
+     * with its expiration date.
+     *
+     * <p>
+     *     If the header is empty, the token type is invalid, the token cannot be verified or
+     *     it is already blacklisted, then no action is performed
+     * </p>
+     * @param request the HTTP request containing the Authorization header
+     * @param response the HTTP response
+     * @param authentication the current authentication, not used in this implementation
+     */
     @Override
     public void logout(
             HttpServletRequest request,

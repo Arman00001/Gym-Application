@@ -18,6 +18,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+/**
+ * Default implementation of {@link AuthenticationService}.
+ *
+ * <p>
+ * This implementation authenticates users using Spring Security's
+ * {@link AuthenticationManager}. After successful authentication, it generates
+ * JWT access and refresh tokens using {@link JwtUtil}.
+ * </p>
+ *
+ * <p>
+ * Failed login attempts are tracked within a fixed time window. If the maximum
+ * number of failed attempts is reached, the user is temporarily blocked.
+ * Successful login resets failed attempt information.
+ * </p>
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
@@ -31,6 +46,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final CustomUserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
 
+    /**
+     * Authenticates the user, applies failed-login blocking rules, and returns JWT tokens.
+     */
+    @Override
     @Transactional(noRollbackFor = {
             BadCredentialsException.class,
             LockedException.class
@@ -82,6 +101,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
+    /**
+     * Updates failed login attempt information for the given user.
+     *
+     * <p>
+     * If the previous failed attempt is outside the configured attempt window,
+     * the counter is restarted from one. Otherwise, the counter is incremented.
+     * When the maximum number of failed attempts is reached, the user is blocked
+     * for the configured block duration.
+     * </p>
+     *
+     * @param user the user whose failed login information should be updated
+     * @param now the current date and time used for attempt and block calculations
+     * @throws LockedException if the user reaches the maximum number of failed login attempts
+     */
     private void handleLoginFailure(User user, LocalDateTime now) {
         LocalDateTime lastFailedLoginAt = user.getLastFailedLoginAt();
 
@@ -106,7 +139,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setBlockedUntil(now.plusMinutes(BLOCK_DURATION_MINUTES));
             userRepository.save(user);
 
-            throw new LockedException("User is blocked for 5 minutes");
+            throw new LockedException("User is blocked for " + BLOCK_DURATION_MINUTES + " minutes");
         } else {
             user.setFailedLoginAttempts(attempts);
         }

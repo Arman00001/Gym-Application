@@ -14,6 +14,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Servlet filter that records custom HTTP request metrics for Gym API endpoints.
+ *
+ * <p>
+ * For each non-Actuator request, this filter records a request counter and a
+ * request duration timer using Micrometer. Metrics are tagged by HTTP method,
+ * normalized URI, and response status.
+ * </p>
+ */
 @Component
 @Order
 public class GymHttpMetricsFilter extends OncePerRequestFilter {
@@ -24,6 +33,12 @@ public class GymHttpMetricsFilter extends OncePerRequestFilter {
         this.meterRegistry = meterRegistry;
     }
 
+    /**
+     * Skips Actuator endpoints to avoid collecting metrics for monitoring requests.
+     *
+     * @param request the current HTTP request
+     * @return {@code true} if the request should not be filtered
+     */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return request.getRequestURI().startsWith("/actuator");
@@ -65,6 +80,17 @@ public class GymHttpMetricsFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * Normalizes request URIs by replacing path variables with template names.
+     *
+     * <p>
+     * This prevents high-cardinality metrics caused by storing usernames or other
+     * dynamic values as metric tags.
+     * </p>
+     *
+     * @param uri the original request URI
+     * @return the normalized URI pattern
+     */
     private String normalizeUri(String uri) {
         if (uri == null || uri.isBlank()) {
             return "unknown";

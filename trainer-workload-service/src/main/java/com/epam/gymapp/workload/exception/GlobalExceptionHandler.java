@@ -7,6 +7,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * Global exception handler for REST controllers.
+ *
+ * <p>
+ * Converts application and security exceptions into standardized
+ * {@link ProblemDetail} responses with appropriate HTTP status codes.
+ * </p>
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 

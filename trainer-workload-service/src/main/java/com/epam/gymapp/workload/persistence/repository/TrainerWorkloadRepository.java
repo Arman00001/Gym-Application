@@ -6,6 +6,9 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * Repository for accessing and managing {@link TrainerWorkload} entities.
+ */
 @Repository
 public interface TrainerWorkloadRepository extends JpaRepository<TrainerWorkload, Long> {
     Optional<TrainerWorkload> findByUsernameAndYearAndMonth(String username, Integer year, Integer month);

@@ -12,6 +12,13 @@ import org.mapstruct.factory.Mappers;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Mapper for converting between {@link Trainer} entities and trainer DTOs.
+ *
+ * <p>
+ * Includes custom mapping logic for building trainer DTOs with assigned trainees.
+ * </p>
+ */
 @Mapper
 public interface TrainerMapper {
     TrainerMapper INSTANCE = Mappers.getMapper(TrainerMapper.class);
@@ -28,8 +35,8 @@ public interface TrainerMapper {
     @Mapping(target = "password", source = "rawPassword")
     TrainerCreateResponse mapToCreateResponse(User user, String rawPassword);
 
-    default List<TrainerDto> mapToDtoList(List<Trainer> trainers){
-        if(trainers == null){
+    default List<TrainerDto> mapToDtoList(List<Trainer> trainers) {
+        if (trainers == null) {
             return Collections.emptyList();
         }
 
@@ -38,8 +45,8 @@ public interface TrainerMapper {
                 .toList();
     }
 
-    default TrainerDto mapToFullDto(Trainer trainer, List<Trainee> trainees){
-        TrainerDto trainerDto = mapToDto(trainer,trainer.getUser(), trainer.getSpecialization());
+    default TrainerDto mapToFullDto(Trainer trainer, List<Trainee> trainees) {
+        TrainerDto trainerDto = mapToDto(trainer, trainer.getUser(), trainer.getSpecialization());
 
         trainerDto.setTrainees(
                 trainees.stream().map(trainee -> {
