@@ -13,11 +13,14 @@ import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
+import com.epam.gymapp.service.TrainingCreatedEvent;
 import com.epam.gymapp.util.TrainerWorkloadClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Default implementation of {@link TrainingService}.
@@ -35,7 +38,7 @@ public class TrainingServiceImpl implements TrainingService {
     private TrainingRepository trainingRepository;
     private TraineeRepository traineeRepository;
     private TrainerRepository trainerRepository;
-    private TrainerWorkloadClient trainerWorkloadClient;
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @Autowired
     public void setTraineeRepository(TraineeRepository traineeRepository) {
@@ -53,11 +56,12 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Autowired
-    public void setTrainerWorkloadClient(TrainerWorkloadClient trainerWorkloadClient) {
-        this.trainerWorkloadClient = trainerWorkloadClient;
+    public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Override
+    @Transactional
     public TrainingDto createTraining(TrainingCreateDto trainingCreateDto) {
         log.info("Creating training profile for trainee {} by trainer {}",
                 trainingCreateDto.getTraineeUsername(),
@@ -81,7 +85,8 @@ public class TrainingServiceImpl implements TrainingService {
                 trainerUser,
                 ActionType.ADD
         );
-        trainerWorkloadClient.sendTrainerWorkload(dto);
+
+        applicationEventPublisher.publishEvent(new TrainingCreatedEvent(dto));
 
         log.info("Training profile created successfully. Trainee id={}, trainer id = {}",
                 trainee.getId(),
@@ -104,12 +109,13 @@ public class TrainingServiceImpl implements TrainingService {
     }
 
     @Override
+    @Transactional
     public void delete(Long id) {
         log.info("Deleting training \nid: {}", id);
         Training training = trainingRepository.deleteTrainingById(id);
         TrainerActionDto dto = constructTrainerAction(training, training.getTrainer().getUser(), ActionType.DELETE);
 
-        trainerWorkloadClient.sendTrainerWorkload(dto);
+        applicationEventPublisher.publishEvent(new TrainingCreatedEvent(dto));
         log.info("Training successfully deleted \nid: {}", id);
     }
 
