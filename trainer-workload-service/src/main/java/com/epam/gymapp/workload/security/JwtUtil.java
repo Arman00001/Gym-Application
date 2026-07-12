@@ -1,4 +1,4 @@
-package com.epam.gymapp.security;
+package com.epam.gymapp.workload.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -116,7 +116,7 @@ public class JwtUtil {
      *
      * @param token the JWT token to verify and decode
      * @return the username stored as the token subject
-     * @throws com.auth0.jwt.exceptions.JWTVerificationException if the token is invalid or expired
+     * @throws JWTVerificationException if the token is invalid or expired
      */
     public String getUsername(String token) {
         return this.verifyAndDecode(token).getSubject();
@@ -127,7 +127,7 @@ public class JwtUtil {
      *
      * @param token the JWT token to verify and decode
      * @return the authorities stored in the {@code roles} claim
-     * @throws com.auth0.jwt.exceptions.JWTVerificationException if the token is invalid or expired
+     * @throws JWTVerificationException if the token is invalid or expired
      */
     public String[] getAuthorities(String token) {
         return this.verifyAndDecode(token).getClaim(ROLES).asArray(String.class);
@@ -138,7 +138,7 @@ public class JwtUtil {
      *
      * @param token the JWT token to verify and decode
      * @return the token expiration date
-     * @throws com.auth0.jwt.exceptions.JWTVerificationException if the token is invalid or expired
+     * @throws JWTVerificationException if the token is invalid or expired
      */
     public Date getExpirationDate(String token) {
         return this.verifyAndDecode(token).getExpiresAt();

@@ -5,6 +5,7 @@ import com.epam.gymapp.dto.trainer.workload.TrainerActionDto;
 import com.epam.gymapp.dto.training.TrainingCreateDto;
 import com.epam.gymapp.dto.training.TrainingDto;
 import com.epam.gymapp.exception.ResourceNotFoundException;
+import com.epam.gymapp.logging.TransactionConstants;
 import com.epam.gymapp.mapper.TrainingMapper;
 import com.epam.gymapp.persistence.entity.Trainee;
 import com.epam.gymapp.persistence.entity.Trainer;
@@ -13,22 +14,25 @@ import com.epam.gymapp.persistence.entity.User;
 import com.epam.gymapp.persistence.repository.trainee.TraineeRepository;
 import com.epam.gymapp.persistence.repository.trainer.TrainerRepository;
 import com.epam.gymapp.persistence.repository.training.TrainingRepository;
-import com.epam.gymapp.service.TrainingCreatedEvent;
-import com.epam.gymapp.util.TrainerWorkloadClient;
+import com.epam.gymapp.workload.TrainingWorkloadEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Default implementation of {@link TrainingService}.
  *
  * <p>
  * This implementation manages training persistence using {@link TrainingRepository}.
- * During training creation and deletion, it also sends trainer workload updates
- * through {@link TrainerWorkloadClient}.
+ * During training creation and deletion, it publishes trainer workload events
+ * that are later sent to the workload microservice.
  * </p>
  */
 @Service
@@ -86,7 +90,12 @@ public class TrainingServiceImpl implements TrainingService {
                 ActionType.ADD
         );
 
-        applicationEventPublisher.publishEvent(new TrainingCreatedEvent(dto));
+        String transactionId = Optional
+                .ofNullable(MDC.get(TransactionConstants.TRANSACTION_ID))
+                .orElse(UUID.randomUUID().toString());
+
+
+        applicationEventPublisher.publishEvent(new TrainingWorkloadEvent(dto, transactionId));
 
         log.info("Training profile created successfully. Trainee id={}, trainer id = {}",
                 trainee.getId(),
@@ -115,7 +124,12 @@ public class TrainingServiceImpl implements TrainingService {
         Training training = trainingRepository.deleteTrainingById(id);
         TrainerActionDto dto = constructTrainerAction(training, training.getTrainer().getUser(), ActionType.DELETE);
 
-        applicationEventPublisher.publishEvent(new TrainingCreatedEvent(dto));
+        String transactionId = Optional
+                .ofNullable(MDC.get(TransactionConstants.TRANSACTION_ID))
+                .orElse(UUID.randomUUID().toString());
+
+
+        applicationEventPublisher.publishEvent(new TrainingWorkloadEvent(dto, transactionId));
         log.info("Training successfully deleted \nid: {}", id);
     }
 

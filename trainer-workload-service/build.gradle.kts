@@ -3,6 +3,7 @@ plugins {
     id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
 }
+val springCloudVersion by extra("2025.1.2")
 
 group = "com.epam.gymapp.workload"
 version = "1.0-SNAPSHOT"
@@ -28,6 +29,9 @@ dependencies {
     // Swagger / OpenAPI
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
+    // Eureka Client
+    implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
+
     // Lombok
     compileOnly("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
@@ -36,7 +40,6 @@ dependencies {
     // In-memory H2 Database
     runtimeOnly("com.h2database:h2")
     implementation("org.springframework.boot:spring-boot-h2console")
-
 
     // MapStruct
     implementation("org.mapstruct:mapstruct:1.6.3")
@@ -48,6 +51,11 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:$springCloudVersion")
+    }
 }
 
 tasks.test {
