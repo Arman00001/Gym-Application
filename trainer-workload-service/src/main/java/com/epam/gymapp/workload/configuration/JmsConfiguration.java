@@ -34,8 +34,14 @@ import java.util.Map;
 public class JmsConfiguration {
     private static final Logger log = LoggerFactory.getLogger(JmsConfiguration.class);
 
-    @Value("${activemq-url}")
+    @Value("${spring.activemq.broker-url}")
     private String url;
+
+    @Value("${spring.activemq.user}")
+    private String username;
+
+    @Value("${spring.activemq.password}")
+    private String password;
 
     @Bean
     public MessageConverter jsonMessageConverter() {
@@ -50,7 +56,7 @@ public class JmsConfiguration {
 
     @Bean
     public ActiveMQConnectionFactory connectionFactory() {
-        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(url);
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(username,password,url);
         return factory;
     }
 

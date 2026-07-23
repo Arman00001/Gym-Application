@@ -34,9 +34,14 @@ import java.util.Map;
 public class JmsConfiguration {
     private static final Logger log = LoggerFactory.getLogger(JmsConfiguration.class);
 
-    @Value("${activemq-url}")
+    @Value("${spring.activemq.broker-url}")
     private String url;
 
+    @Value("${spring.activemq.user}")
+    private String username;
+
+    @Value("${spring.activemq.password}")
+    private String password;
     @Bean
     public MessageConverter jsonMessageConverter() {
         JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter();
@@ -50,7 +55,7 @@ public class JmsConfiguration {
 
     @Bean
     public ActiveMQConnectionFactory connectionFactory() {
-        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(url);
+        ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(username,password,url);
         return factory;
     }
 
@@ -67,10 +72,7 @@ public class JmsConfiguration {
         factory.setConcurrency(concurrencyLevel);
         factory.setSessionTransacted(true);
         factory.setTransactionManager(jmsTransactionManager);
-        factory.setErrorHandler(t -> {
-            log.info("Error handling for messages, error: {}", t.getMessage());
-
-        });
+        factory.setErrorHandler(t -> log.info("Error handling for messages, error: {}", t.getMessage()));
         return factory;
     }
 
