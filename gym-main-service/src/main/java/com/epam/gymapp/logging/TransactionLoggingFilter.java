@@ -21,6 +21,14 @@ import java.util.UUID;
 import static com.epam.gymapp.logging.TransactionConstants.TRANSACTION_ID;
 import static com.epam.gymapp.logging.TransactionConstants.TRANSACTION_ID_HEADER;
 
+/**
+ * Logs HTTP request and response details for each transaction.
+ *
+ * <p>Uses an incoming transaction ID header when available, or generates a new
+ * transaction ID otherwise. The transaction ID is added to the response and
+ * SLF4J MDC. Request and response bodies are logged with selected sensitive
+ * fields masked.</p>
+ */
 @Slf4j
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)

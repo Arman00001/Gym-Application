@@ -7,12 +7,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.jms.autoconfigure.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
-import org.springframework.jms.config.JmsListenerContainerFactory;
 import org.springframework.jms.connection.JmsTransactionManager;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.support.converter.JacksonJsonMessageConverter;
@@ -23,26 +21,21 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.util.Map;
 
+/**
+ * Configures ActiveMQ-based JMS messaging for trainer workload updates.
+ *
+ * <p>Defines the connection factory, JSON message conversion, transactional
+ * listener container, JMS transaction manager, and {@link JmsTemplate} used
+ * for sending and receiving {@link TrainerActionDto} messages.</p>
+ */
 @EnableTransactionManagement
 @EnableJms
 @Configuration
 public class JmsConfiguration {
-
     private static final Logger log = LoggerFactory.getLogger(JmsConfiguration.class);
 
     @Value("${activemq-url}")
     private String url;
-
-    public JmsListenerContainerFactory jmsListenerContainerFactory(
-            ConnectionFactory connectionFactory,
-            DefaultJmsListenerContainerFactoryConfigurer configurer
-    ) {
-        DefaultJmsListenerContainerFactory containerFactory = new DefaultJmsListenerContainerFactory();
-        configurer.configure(containerFactory, connectionFactory);
-
-        containerFactory.setSessionTransacted(true);
-        return containerFactory;
-    }
 
     @Bean
     public MessageConverter jsonMessageConverter() {

@@ -8,6 +8,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+/**
+ * Sends trainer workload updates to the workload messaging destination.
+ *
+ * <p>Uses a circuit breaker to handle messaging failures and delegates message
+ * delivery to {@link WorkloadMessageClient}. Failed delivery attempts are
+ * handled by a fallback method and logged.</p>
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -40,7 +47,16 @@ public class TrainerWorkloadIntegrationService {
         );
     }
 
-    public void sendTrainerWorkloadFallback(TrainerActionDto request, Throwable ex) {
+    /**
+     * Handles a failed workload update attempt.
+     *
+     * @param request workload update that could not be sent
+     * @param ex      cause of the failure
+     */
+    public void sendTrainerWorkloadFallback(
+            TrainerActionDto request,
+            Throwable ex
+    ) {
         log.error(
                 "Failed to send trainer workload update. username={}, actionType={}, date={}, duration={}. Reason: {}",
                 request.getUsername(),
