@@ -12,19 +12,19 @@ import java.time.LocalDate;
 @Getter
 @Setter
 public class TrainerActionDto {
-    @NotBlank
+    @NotBlank(message = "username is required")
     private String username;
-    @NotBlank
+    @NotBlank(message = "first name is required")
     private String firstName;
-    @NotBlank
+    @NotBlank(message = "last name is required")
     private String lastName;
-    @NotNull
+    @NotNull(message = "activity status is required")
     private Boolean isActive;
-    @NotNull
+    @NotNull(message = "training date is required")
     private LocalDate trainingDate;
-    @NotNull
+    @NotNull(message = "duration should be non-empty and positive")
     @Positive
     private Long duration;
-    @NotNull
+    @NotNull(message = "action type is required")
     private ActionType actionType;
 }

@@ -32,6 +32,9 @@ dependencies {
     // Eureka Client
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
 
+    // Spring Messaging ActiveMQ
+    implementation("org.springframework.boot:spring-boot-starter-activemq")
+
     // Lombok
     compileOnly("org.projectlombok:lombok:1.18.46")
     annotationProcessor("org.projectlombok:lombok:1.18.46")
